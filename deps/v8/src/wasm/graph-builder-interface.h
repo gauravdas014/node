@@ -27,9 +27,14 @@ struct FunctionBody;
 class WasmFeatures;
 struct WasmModule;
 
-enum EndpointInstrumentationMode {
-  kDoNotInstrumentEndpoints,
-  kInstrumentEndpoints
+enum InlinedStatus {
+  // Inlined function whose call node has IfSuccess/IfException outputs.
+  kInlinedHandledCall,
+  // Inlined function whose call node does not have IfSuccess/IfException
+  // outputs.
+  kInlinedNonHandledCall,
+  // Not an inlined call.
+  kRegularFunction
 };
 
 V8_EXPORT_PRIVATE DecodeResult
@@ -38,7 +43,7 @@ BuildTFGraph(AccountingAllocator* allocator, const WasmFeatures& enabled,
              WasmFeatures* detected, const FunctionBody& body,
              std::vector<compiler::WasmLoopInfo>* loop_infos,
              compiler::NodeOriginTable* node_origins, int func_index,
-             EndpointInstrumentationMode instrumentation);
+             InlinedStatus inlined_status);
 
 }  // namespace wasm
 }  // namespace internal

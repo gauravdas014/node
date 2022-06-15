@@ -8,13 +8,14 @@
 #include "src/objects/fixed-array.h"
 #include "src/objects/js-objects.h"
 #include "src/objects/struct.h"
-#include "torque-generated/field-offsets.h"
 
 // Has to be the last include (doesn't have include guards):
 #include "src/objects/object-macros.h"
 
 namespace v8 {
 namespace internal {
+
+class StructBodyDescriptor;
 
 #include "torque-generated/src/objects/arguments-tq.inc"
 
@@ -67,6 +68,8 @@ class AliasedArgumentsEntry
     : public TorqueGeneratedAliasedArgumentsEntry<AliasedArgumentsEntry,
                                                   Struct> {
  public:
+  using BodyDescriptor = StructBodyDescriptor;
+
   TQ_OBJECT_CONSTRUCTORS(AliasedArgumentsEntry)
 };
 

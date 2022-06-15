@@ -11,6 +11,7 @@ namespace compiler {
 
 // PPC-specific opcodes that specify which assembly sequence to emit.
 // Most opcodes specify a single instruction.
+
 #define TARGET_ARCH_OPCODE_LIST(V)   \
   V(PPC_Peek)                        \
   V(PPC_Sync)                        \

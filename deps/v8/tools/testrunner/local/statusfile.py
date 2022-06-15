@@ -25,15 +25,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# for py2/py3 compatibility
-from __future__ import print_function
-from __future__ import absolute_import
-
 import os
 import re
 
-from .variants import ALL_VARIANTS
-from .utils import Freeze
+from testrunner.local.variants import ALL_VARIANTS
+from testrunner.local.utils import Freeze
 
 # Possible outcomes
 FAIL = "FAIL"
@@ -131,8 +127,8 @@ class StatusFile(object):
 
     for variant in variants:
       for rule, value in (
-          list(self._rules.get(variant, {}).iteritems()) +
-          list(self._prefix_rules.get(variant, {}).iteritems())):
+          list(self._rules.get(variant, {}).items()) +
+          list(self._prefix_rules.get(variant, {}).items())):
         if (rule, variant) not in used_rules:
           if variant == '':
             variant_desc = 'variant independent'
@@ -161,7 +157,7 @@ def _EvalExpression(exp, variables):
   try:
     return eval(exp, variables)
   except NameError as e:
-    identifier = re.match("name '(.*)' is not defined", e.message).group(1)
+    identifier = re.match("name '(.*)' is not defined", str(e)).group(1)
     assert identifier == "variant", "Unknown identifier: %s" % identifier
     return VARIANT_EXPRESSION
 
@@ -283,7 +279,7 @@ def ReadStatusFile(content, variables):
 
 def _ReadSection(section, variables, rules, prefix_rules):
   assert type(section) == dict
-  for rule, outcome_list in section.items():
+  for rule, outcome_list in list(section.items()):
     assert type(rule) == str
 
     if rule[-1] == '*':

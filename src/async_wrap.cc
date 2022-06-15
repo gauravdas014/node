@@ -151,9 +151,6 @@ void AsyncWrap::EmitAfter(Environment* env, double async_id) {
        env->async_hooks_after_function());
 }
 
-// TODO(addaleax): Remove once we're on C++17.
-constexpr double AsyncWrap::kInvalidAsyncId;
-
 static void SetupHooks(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
@@ -217,12 +214,13 @@ void AsyncWrap::WeakCallback(const WeakCallbackInfo<DestroyParam>& info) {
 
   p->env->RemoveCleanupHook(DestroyParamCleanupHook, p.get());
 
-  if (!prop_bag->Get(p->env->context(), p->env->destroyed_string())
+  if (!prop_bag.IsEmpty() &&
+      !prop_bag->Get(p->env->context(), p->env->destroyed_string())
         .ToLocal(&val)) {
     return;
   }
 
-  if (val->IsFalse()) {
+  if (val.IsEmpty() || val->IsFalse()) {
     AsyncWrap::EmitDestroy(p->env, p->asyncId);
   }
   // unique_ptr goes out of scope here and pointer is deleted.
@@ -232,14 +230,16 @@ void AsyncWrap::WeakCallback(const WeakCallbackInfo<DestroyParam>& info) {
 static void RegisterDestroyHook(const FunctionCallbackInfo<Value>& args) {
   CHECK(args[0]->IsObject());
   CHECK(args[1]->IsNumber());
-  CHECK(args[2]->IsObject());
+  CHECK(args.Length() == 2 || args[2]->IsObject());
 
   Isolate* isolate = args.GetIsolate();
   DestroyParam* p = new DestroyParam();
   p->asyncId = args[1].As<Number>()->Value();
   p->env = Environment::GetCurrent(args);
   p->target.Reset(isolate, args[0].As<Object>());
-  p->propBag.Reset(isolate, args[2].As<Object>());
+  if (args.Length() > 2) {
+    p->propBag.Reset(isolate, args[2].As<Object>());
+  }
   p->target.SetWeak(p, AsyncWrap::WeakCallback, WeakCallbackType::kParameter);
   p->env->AddCleanupHook(DestroyParamCleanupHook, p);
 }
@@ -313,7 +313,7 @@ void AsyncWrap::EmitDestroy(bool from_gc) {
 
   if (!persistent().IsEmpty() && !from_gc) {
     HandleScope handle_scope(env()->isolate());
-    USE(object()->Set(env()->context(), env()->owner_symbol(), object()));
+    USE(object()->Set(env()->context(), env()->resource_symbol(), object()));
   }
 }
 
@@ -327,9 +327,11 @@ void AsyncWrap::QueueDestroyAsyncId(const FunctionCallbackInfo<Value>& args) {
 void AsyncWrap::SetCallbackTrampoline(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
-  CHECK(args[0]->IsFunction());
-
-  env->set_async_hooks_callback_trampoline(args[0].As<Function>());
+  if (args[0]->IsFunction()) {
+    env->set_async_hooks_callback_trampoline(args[0].As<Function>());
+  } else {
+    env->set_async_hooks_callback_trampoline(Local<Function>());
+  }
 }
 
 Local<FunctionTemplate> AsyncWrap::GetConstructorTemplate(Environment* env) {
@@ -439,6 +441,7 @@ void AsyncWrap::Initialize(Local<Object> target,
   env->set_async_hooks_after_function(Local<Function>());
   env->set_async_hooks_destroy_function(Local<Function>());
   env->set_async_hooks_promise_resolve_function(Local<Function>());
+  env->set_async_hooks_callback_trampoline(Local<Function>());
   env->set_async_hooks_binding(target);
 }
 
@@ -586,7 +589,7 @@ void AsyncWrap::AsyncReset(Local<Object> resource, double execution_async_id,
     Local<Object> obj = object();
     CHECK(!obj.IsEmpty());
     if (resource != obj) {
-      USE(obj->Set(env()->context(), env()->owner_symbol(), resource));
+      USE(obj->Set(env()->context(), env()->resource_symbol(), resource));
     }
   }
 

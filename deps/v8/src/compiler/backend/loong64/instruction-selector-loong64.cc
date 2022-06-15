@@ -345,9 +345,9 @@ void InstructionSelector::VisitStackSlot(Node* node) {
        sequence()->AddImmediate(Constant(slot)), 0, nullptr);
 }
 
-void InstructionSelector::VisitAbortCSAAssert(Node* node) {
+void InstructionSelector::VisitAbortCSADcheck(Node* node) {
   Loong64OperandGenerator g(this);
-  Emit(kArchAbortCSAAssert, g.NoOutput(), g.UseFixed(node->InputAt(0), a0));
+  Emit(kArchAbortCSADcheck, g.NoOutput(), g.UseFixed(node->InputAt(0), a0));
 }
 
 void EmitLoad(InstructionSelector* selector, Node* node, InstructionCode opcode,
@@ -467,6 +467,7 @@ void InstructionSelector::VisitLoad(Node* node) {
       break;
     case MachineRepresentation::kCompressedPointer:  // Fall through.
     case MachineRepresentation::kCompressed:         // Fall through.
+    case MachineRepresentation::kSandboxedPointer:   // Fall through.
     case MachineRepresentation::kMapWord:            // Fall through.
     case MachineRepresentation::kNone:
     case MachineRepresentation::kSimd128:
@@ -545,6 +546,7 @@ void InstructionSelector::VisitStore(Node* node) {
         break;
       case MachineRepresentation::kCompressedPointer:  // Fall through.
       case MachineRepresentation::kCompressed:         // Fall through.
+      case MachineRepresentation::kSandboxedPointer:   // Fall through.
       case MachineRepresentation::kMapWord:            // Fall through.
       case MachineRepresentation::kNone:
       case MachineRepresentation::kSimd128:
@@ -1084,15 +1086,14 @@ void InstructionSelector::VisitInt64Mul(Node* node) {
   Loong64OperandGenerator g(this);
   Int64BinopMatcher m(node);
   if (m.right().HasResolvedValue() && m.right().ResolvedValue() > 0) {
-    uint32_t value = static_cast<uint32_t>(m.right().ResolvedValue());
+    uint64_t value = static_cast<uint64_t>(m.right().ResolvedValue());
     if (base::bits::IsPowerOfTwo(value)) {
       Emit(kLoong64Sll_d | AddressingModeField::encode(kMode_None),
            g.DefineAsRegister(node), g.UseRegister(m.left().node()),
            g.TempImmediate(base::bits::WhichPowerOfTwo(value)));
       return;
     }
-    if (base::bits::IsPowerOfTwo(value - 1) && value - 1 > 0 &&
-        value - 1 <= 31) {
+    if (base::bits::IsPowerOfTwo(value - 1) && value - 1 > 0) {
       // Alsl_d macro will handle the shifting value out of bound cases.
       Emit(kLoong64Alsl_d, g.DefineAsRegister(node),
            g.UseRegister(m.left().node()), g.UseRegister(m.left().node()),
@@ -1355,37 +1356,21 @@ void InstructionSelector::VisitBitcastWord32ToWord64(Node* node) {
 }
 
 void InstructionSelector::VisitChangeInt32ToInt64(Node* node) {
+  // On LoongArch64, int32 values should all be sign-extended to 64-bit, so
+  // no need to sign-extend them here.
+  // But when call to a host function in simulator, if the function return an
+  // int32 value, the simulator do not sign-extend to int64, because in
+  // simulator we do not know the function whether return an int32 or int64.
 #ifdef USE_SIMULATOR
   Node* value = node->InputAt(0);
-  if ((value->opcode() == IrOpcode::kLoad ||
-       value->opcode() == IrOpcode::kLoadImmutable) &&
-      CanCover(node, value)) {
-    // Generate sign-extending load.
-    LoadRepresentation load_rep = LoadRepresentationOf(value->op());
-    InstructionCode opcode = kArchNop;
-    switch (load_rep.representation()) {
-      case MachineRepresentation::kBit:  // Fall through.
-      case MachineRepresentation::kWord8:
-        opcode = load_rep.IsUnsigned() ? kLoong64Ld_bu : kLoong64Ld_b;
-        break;
-      case MachineRepresentation::kWord16:
-        opcode = load_rep.IsUnsigned() ? kLoong64Ld_hu : kLoong64Ld_h;
-        break;
-      case MachineRepresentation::kWord32:
-        opcode = kLoong64Ld_w;
-        break;
-      default:
-        UNREACHABLE();
-    }
-    EmitLoad(this, value, opcode, node);
-  } else {
+  if (value->opcode() == IrOpcode::kCall) {
     Loong64OperandGenerator g(this);
-    Emit(kLoong64Sll_w, g.DefineAsRegister(node),
-         g.UseRegister(node->InputAt(0)), g.TempImmediate(0));
+    Emit(kLoong64Sll_w, g.DefineAsRegister(node), g.UseRegister(value),
+         g.TempImmediate(0));
+    return;
   }
-#else
-  EmitIdentity(node);
 #endif
+  EmitIdentity(node);
 }
 
 bool InstructionSelector::ZeroExtendsWord32ToWord64NoPhis(Node* node) {

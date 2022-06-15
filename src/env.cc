@@ -1,5 +1,4 @@
 #include "env.h"
-#include "allocated_buffer-inl.h"
 #include "async_wrap.h"
 #include "base_object-inl.h"
 #include "debug_utils-inl.h"
@@ -545,21 +544,21 @@ void Environment::InitializeLibuv() {
   CHECK_EQ(0, uv_timer_init(event_loop(), timer_handle()));
   uv_unref(reinterpret_cast<uv_handle_t*>(timer_handle()));
 
-  uv_check_init(event_loop(), immediate_check_handle());
+  CHECK_EQ(0, uv_check_init(event_loop(), immediate_check_handle()));
   uv_unref(reinterpret_cast<uv_handle_t*>(immediate_check_handle()));
 
-  uv_idle_init(event_loop(), immediate_idle_handle());
+  CHECK_EQ(0, uv_idle_init(event_loop(), immediate_idle_handle()));
 
-  uv_check_start(immediate_check_handle(), CheckImmediate);
+  CHECK_EQ(0, uv_check_start(immediate_check_handle(), CheckImmediate));
 
   // Inform V8's CPU profiler when we're idle.  The profiler is sampling-based
   // but not all samples are created equal; mark the wall clock time spent in
   // epoll_wait() and friends so profiling tools can filter it out.  The samples
   // still end up in v8.log but with state=IDLE rather than state=EXTERNAL.
-  uv_prepare_init(event_loop(), &idle_prepare_handle_);
-  uv_check_init(event_loop(), &idle_check_handle_);
+  CHECK_EQ(0, uv_prepare_init(event_loop(), &idle_prepare_handle_));
+  CHECK_EQ(0, uv_check_init(event_loop(), &idle_check_handle_));
 
-  uv_async_init(
+  CHECK_EQ(0, uv_async_init(
       event_loop(),
       &task_queues_async_,
       [](uv_async_t* async) {
@@ -568,7 +567,7 @@ void Environment::InitializeLibuv() {
         HandleScope handle_scope(env->isolate());
         Context::Scope context_scope(env->context());
         env->RunAndClearNativeImmediates();
-      });
+      }));
   uv_unref(reinterpret_cast<uv_handle_t*>(&idle_prepare_handle_));
   uv_unref(reinterpret_cast<uv_handle_t*>(&idle_check_handle_));
   uv_unref(reinterpret_cast<uv_handle_t*>(&task_queues_async_));
@@ -674,8 +673,7 @@ void Environment::PrintSyncTrace() const {
 
 void Environment::RunCleanup() {
   started_cleanup_ = true;
-  TraceEventScope trace_scope(TRACING_CATEGORY_NODE1(environment),
-                              "RunCleanup", this);
+  TRACE_EVENT0(TRACING_CATEGORY_NODE1(environment), "RunCleanup");
   bindings_.clear();
   CleanupHandles();
 
@@ -717,8 +715,7 @@ void Environment::RunCleanup() {
 }
 
 void Environment::RunAtExitCallbacks() {
-  TraceEventScope trace_scope(TRACING_CATEGORY_NODE1(environment),
-                              "AtExit", this);
+  TRACE_EVENT0(TRACING_CATEGORY_NODE1(environment), "AtExit");
   for (ExitCallback at_exit : at_exit_functions_) {
     at_exit.cb_(at_exit.arg_);
   }
@@ -744,8 +741,8 @@ void Environment::RunAndClearInterrupts() {
 }
 
 void Environment::RunAndClearNativeImmediates(bool only_refed) {
-  TraceEventScope trace_scope(TRACING_CATEGORY_NODE1(environment),
-                              "RunAndClearNativeImmediates", this);
+  TRACE_EVENT0(TRACING_CATEGORY_NODE1(environment),
+               "RunAndClearNativeImmediates");
   HandleScope handle_scope(isolate_);
   InternalCallbackScope cb_scope(this, Object::New(isolate_), { 0, 0 });
 
@@ -849,8 +846,7 @@ void Environment::ToggleTimerRef(bool ref) {
 
 void Environment::RunTimers(uv_timer_t* handle) {
   Environment* env = Environment::from_timer_handle(handle);
-  TraceEventScope trace_scope(TRACING_CATEGORY_NODE1(environment),
-                              "RunTimers", env);
+  TRACE_EVENT0(TRACING_CATEGORY_NODE1(environment), "RunTimers");
 
   if (!env->can_call_into_js())
     return;
@@ -911,8 +907,7 @@ void Environment::RunTimers(uv_timer_t* handle) {
 
 void Environment::CheckImmediate(uv_check_t* handle) {
   Environment* env = Environment::from_immediate_check_handle(handle);
-  TraceEventScope trace_scope(TRACING_CATEGORY_NODE1(environment),
-                              "CheckImmediate", env);
+  TRACE_EVENT0(TRACING_CATEGORY_NODE1(environment), "CheckImmediate");
 
   HandleScope scope(env->isolate());
   Context::Scope context_scope(env->context());
@@ -1096,20 +1091,29 @@ void AsyncHooks::Deserialize(Local<Context> context) {
   async_ids_stack_.Deserialize(context);
   fields_.Deserialize(context);
   async_id_fields_.Deserialize(context);
-  if (info_->js_execution_async_resources != 0) {
-    Local<Array> arr = context->GetDataFromSnapshotOnce<Array>(
-                                  info_->js_execution_async_resources)
-                              .ToLocalChecked();
-    js_execution_async_resources_.Reset(context->GetIsolate(), arr);
-  }
 
-  native_execution_async_resources_.resize(
-      info_->native_execution_async_resources.size());
+  Local<Array> js_execution_async_resources;
+  if (info_->js_execution_async_resources != 0) {
+    js_execution_async_resources =
+        context->GetDataFromSnapshotOnce<Array>(
+            info_->js_execution_async_resources).ToLocalChecked();
+  } else {
+    js_execution_async_resources = Array::New(context->GetIsolate());
+  }
+  js_execution_async_resources_.Reset(
+      context->GetIsolate(), js_execution_async_resources);
+
+  // The native_execution_async_resources_ field requires v8::Local<> instances
+  // for async calls whose resources were on the stack as JS objects when they
+  // were entered. We cannot recreate this here; however, storing these values
+  // on the JS equivalent gives the same result, so we do that instead.
   for (size_t i = 0; i < info_->native_execution_async_resources.size(); ++i) {
+    if (info_->native_execution_async_resources[i] == SIZE_MAX)
+      continue;
     Local<Object> obj = context->GetDataFromSnapshotOnce<Object>(
                                    info_->native_execution_async_resources[i])
                                .ToLocalChecked();
-    native_execution_async_resources_[i].Reset(context->GetIsolate(), obj);
+    js_execution_async_resources->Set(context, i, obj).Check();
   }
   info_ = nullptr;
 }
@@ -1155,9 +1159,11 @@ AsyncHooks::SerializeInfo AsyncHooks::Serialize(Local<Context> context,
   info.native_execution_async_resources.resize(
       native_execution_async_resources_.size());
   for (size_t i = 0; i < native_execution_async_resources_.size(); i++) {
-    info.native_execution_async_resources[i] = creator->AddData(
-        context,
-        native_execution_async_resources_[i].Get(context->GetIsolate()));
+    info.native_execution_async_resources[i] =
+        native_execution_async_resources_[i].IsEmpty() ? SIZE_MAX :
+            creator->AddData(
+                context,
+                native_execution_async_resources_[i]);
   }
   CHECK_EQ(contexts_.size(), 1);
   CHECK_EQ(contexts_[0], env()->context());
@@ -1183,6 +1189,21 @@ void AsyncHooks::grow_async_ids_stack() {
       env()->context(),
       env()->async_ids_stack_string(),
       async_ids_stack_.GetJSArray()).Check();
+}
+
+void AsyncHooks::FailWithCorruptedAsyncStack(double expected_async_id) {
+  fprintf(stderr,
+          "Error: async hook stack has become corrupted ("
+          "actual: %.f, expected: %.f)\n",
+          async_id_fields_.GetValue(kExecutionAsyncId),
+          expected_async_id);
+  DumpBacktrace(stderr);
+  fflush(stderr);
+  if (!env()->abort_on_uncaught_exception())
+    exit(1);
+  fprintf(stderr, "\n");
+  fflush(stderr);
+  ABORT_NO_BACKTRACE();
 }
 
 void Environment::Exit(int exit_code) {
@@ -1577,7 +1598,7 @@ size_t Environment::NearHeapLimitCallback(void* data,
   // may eventually crash with this new limit - effectively raising
   // the heap limit to the new one.
   if (env->is_processing_heap_limit_callback_) {
-    size_t new_limit = initial_heap_limit + max_young_gen_size;
+    size_t new_limit = current_heap_limit + max_young_gen_size;
     Debug(env,
           DebugCategory::DIAGNOSTICS,
           "Not generating snapshots in nested callback. "
@@ -1595,7 +1616,9 @@ size_t Environment::NearHeapLimitCallback(void* data,
           "Not generating snapshots because it's too risky.\n");
     env->isolate()->RemoveNearHeapLimitCallback(NearHeapLimitCallback,
                                                 initial_heap_limit);
-    return current_heap_limit;
+    // The new limit must be higher than current_heap_limit or V8 might
+    // crash.
+    return current_heap_limit + 1;
   }
 
   // Take the snapshot synchronously.
@@ -1615,7 +1638,7 @@ size_t Environment::NearHeapLimitCallback(void* data,
   env->isolate()->RemoveNearHeapLimitCallback(NearHeapLimitCallback,
                                               initial_heap_limit);
 
-  heap::WriteSnapshot(env->isolate(), filename.c_str());
+  heap::WriteSnapshot(env, filename.c_str());
   env->heap_limit_snapshot_taken_ += 1;
 
   // Don't take more snapshots than the number specified by
@@ -1631,7 +1654,10 @@ size_t Environment::NearHeapLimitCallback(void* data,
   env->isolate()->AutomaticallyRestoreInitialHeapLimit(0.95);
 
   env->is_processing_heap_limit_callback_ = false;
-  return initial_heap_limit;
+
+  // The new limit must be higher than current_heap_limit or V8 might
+  // crash.
+  return current_heap_limit + 1;
 }
 
 inline size_t Environment::SelfSize() const {

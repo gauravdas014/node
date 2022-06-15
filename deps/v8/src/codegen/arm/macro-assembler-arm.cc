@@ -45,20 +45,10 @@ int TurboAssembler::RequiredStackSizeForCallerSaved(SaveFPRegsMode fp_mode,
                                                     Register exclusion2,
                                                     Register exclusion3) const {
   int bytes = 0;
-  RegList exclusions = 0;
-  if (exclusion1 != no_reg) {
-    exclusions |= exclusion1.bit();
-    if (exclusion2 != no_reg) {
-      exclusions |= exclusion2.bit();
-      if (exclusion3 != no_reg) {
-        exclusions |= exclusion3.bit();
-      }
-    }
-  }
+  RegList exclusions = {exclusion1, exclusion2, exclusion3};
+  RegList list = (kCallerSaved | lr) - exclusions;
 
-  RegList list = (kCallerSaved | lr.bit()) & ~exclusions;
-
-  bytes += NumRegs(list) * kPointerSize;
+  bytes += list.Count() * kPointerSize;
 
   if (fp_mode == SaveFPRegsMode::kSave) {
     bytes += DwVfpRegister::kNumRegisters * DwVfpRegister::kSizeInBytes;
@@ -71,21 +61,11 @@ int TurboAssembler::PushCallerSaved(SaveFPRegsMode fp_mode, Register exclusion1,
                                     Register exclusion2, Register exclusion3) {
   ASM_CODE_COMMENT(this);
   int bytes = 0;
-  RegList exclusions = 0;
-  if (exclusion1 != no_reg) {
-    exclusions |= exclusion1.bit();
-    if (exclusion2 != no_reg) {
-      exclusions |= exclusion2.bit();
-      if (exclusion3 != no_reg) {
-        exclusions |= exclusion3.bit();
-      }
-    }
-  }
-
-  RegList list = (kCallerSaved | lr.bit()) & ~exclusions;
+  RegList exclusions = {exclusion1, exclusion2, exclusion3};
+  RegList list = (kCallerSaved | lr) - exclusions;
   stm(db_w, sp, list);
 
-  bytes += NumRegs(list) * kPointerSize;
+  bytes += list.Count() * kPointerSize;
 
   if (fp_mode == SaveFPRegsMode::kSave) {
     SaveFPRegs(sp, lr);
@@ -104,21 +84,11 @@ int TurboAssembler::PopCallerSaved(SaveFPRegsMode fp_mode, Register exclusion1,
     bytes += DwVfpRegister::kNumRegisters * DwVfpRegister::kSizeInBytes;
   }
 
-  RegList exclusions = 0;
-  if (exclusion1 != no_reg) {
-    exclusions |= exclusion1.bit();
-    if (exclusion2 != no_reg) {
-      exclusions |= exclusion2.bit();
-      if (exclusion3 != no_reg) {
-        exclusions |= exclusion3.bit();
-      }
-    }
-  }
-
-  RegList list = (kCallerSaved | lr.bit()) & ~exclusions;
+  RegList exclusions = {exclusion1, exclusion2, exclusion3};
+  RegList list = (kCallerSaved | lr) - exclusions;
   ldm(ia_w, sp, list);
 
-  bytes += NumRegs(list) * kPointerSize;
+  bytes += list.Count() * kPointerSize;
 
   return bytes;
 }
@@ -696,27 +666,15 @@ void MacroAssembler::RecordWriteField(Register object, int offset,
 }
 
 void TurboAssembler::MaybeSaveRegisters(RegList registers) {
-  if (registers == 0) return;
+  if (registers.is_empty()) return;
   ASM_CODE_COMMENT(this);
-  RegList regs = 0;
-  for (int i = 0; i < Register::kNumRegisters; ++i) {
-    if ((registers >> i) & 1u) {
-      regs |= Register::from_code(i).bit();
-    }
-  }
-  stm(db_w, sp, regs);
+  stm(db_w, sp, registers);
 }
 
 void TurboAssembler::MaybeRestoreRegisters(RegList registers) {
-  if (registers == 0) return;
+  if (registers.is_empty()) return;
   ASM_CODE_COMMENT(this);
-  RegList regs = 0;
-  for (int i = 0; i < Register::kNumRegisters; ++i) {
-    if ((registers >> i) & 1u) {
-      regs |= Register::from_code(i).bit();
-    }
-  }
-  ldm(ia_w, sp, regs);
+  ldm(ia_w, sp, registers);
 }
 
 void TurboAssembler::CallEphemeronKeyBarrier(Register object, Operand offset,
@@ -876,15 +834,15 @@ void TurboAssembler::PushCommonFrame(Register marker_reg) {
   ASM_CODE_COMMENT(this);
   if (marker_reg.is_valid()) {
     if (marker_reg.code() > fp.code()) {
-      stm(db_w, sp, fp.bit() | lr.bit());
+      stm(db_w, sp, {fp, lr});
       mov(fp, Operand(sp));
       Push(marker_reg);
     } else {
-      stm(db_w, sp, marker_reg.bit() | fp.bit() | lr.bit());
+      stm(db_w, sp, {marker_reg, fp, lr});
       add(fp, sp, Operand(kPointerSize));
     }
   } else {
-    stm(db_w, sp, fp.bit() | lr.bit());
+    stm(db_w, sp, {fp, lr});
     mov(fp, sp);
   }
 }
@@ -892,9 +850,7 @@ void TurboAssembler::PushCommonFrame(Register marker_reg) {
 void TurboAssembler::PushStandardFrame(Register function_reg) {
   ASM_CODE_COMMENT(this);
   DCHECK(!function_reg.is_valid() || function_reg.code() < cp.code());
-  stm(db_w, sp,
-      (function_reg.is_valid() ? function_reg.bit() : 0) | cp.bit() | fp.bit() |
-          lr.bit());
+  stm(db_w, sp, {function_reg, cp, fp, lr});
   int offset = -StandardFrameConstants::kContextOffset;
   offset += function_reg.is_valid() ? kPointerSize : 0;
   add(fp, sp, Operand(offset));
@@ -1426,7 +1382,7 @@ int TurboAssembler::LeaveFrame(StackFrame::Type type) {
   // the caller frame pointer and return address.
   mov(sp, fp);
   int frame_ends = pc_offset();
-  ldm(ia_w, sp, fp.bit() | lr.bit());
+  ldm(ia_w, sp, {fp, lr});
   return frame_ends;
 }
 
@@ -1575,7 +1531,7 @@ void MacroAssembler::LeaveExitFrame(bool save_doubles, Register argument_count,
 
   // Tear down the exit frame, pop the arguments, and return.
   mov(sp, Operand(fp));
-  ldm(ia_w, sp, fp.bit() | lr.bit());
+  ldm(ia_w, sp, {fp, lr});
   if (argument_count.is_valid()) {
     if (argument_count_is_length) {
       add(sp, sp, argument_count);
@@ -1642,8 +1598,10 @@ void MacroAssembler::InvokePrologue(Register expected_parameter_count,
 
   // If the expected parameter count is equal to the adaptor sentinel, no need
   // to push undefined value as arguments.
-  cmp(expected_parameter_count, Operand(kDontAdaptArgumentsSentinel));
-  b(eq, &regular_invoke);
+  if (kDontAdaptArgumentsSentinel != 0) {
+    cmp(expected_parameter_count, Operand(kDontAdaptArgumentsSentinel));
+    b(eq, &regular_invoke);
+  }
 
   // If overapplication or if the actual argument count is equal to the
   // formal parameter count, no need to push extra undefined values.
@@ -1672,11 +1630,7 @@ void MacroAssembler::InvokePrologue(Register expected_parameter_count,
     str(scratch, MemOperand(dest, kSystemPointerSize, PostIndex));
     sub(num, num, Operand(1), SetCC);
     bind(&check);
-    if (kJSArgcIncludesReceiver) {
-      b(gt, &copy);
-    } else {
-      b(ge, &copy);
-    }
+    b(gt, &copy);
   }
 
   // Fill remaining expected arguments with undefined values.
@@ -1692,8 +1646,8 @@ void MacroAssembler::InvokePrologue(Register expected_parameter_count,
 
   bind(&stack_overflow);
   {
-    FrameScope frame(this,
-                     has_frame() ? StackFrame::NONE : StackFrame::INTERNAL);
+    FrameScope frame(
+        this, has_frame() ? StackFrame::NO_FRAME_TYPE : StackFrame::INTERNAL);
     CallRuntime(Runtime::kThrowStackOverflow);
     bkpt(0);
   }
@@ -1707,7 +1661,8 @@ void MacroAssembler::CallDebugOnFunctionCall(Register fun, Register new_target,
   ASM_CODE_COMMENT(this);
   // Load receiver to pass it later to DebugOnFunctionCall hook.
   ldr(r4, ReceiverOperand(actual_parameter_count));
-  FrameScope frame(this, has_frame() ? StackFrame::NONE : StackFrame::INTERNAL);
+  FrameScope frame(
+      this, has_frame() ? StackFrame::NO_FRAME_TYPE : StackFrame::INTERNAL);
 
   SmiTag(expected_parameter_count);
   Push(expected_parameter_count);
@@ -1874,16 +1829,26 @@ void MacroAssembler::CompareInstanceType(Register map, Register type_reg,
   cmp(type_reg, Operand(type));
 }
 
+void MacroAssembler::CompareRange(Register value, unsigned lower_limit,
+                                  unsigned higher_limit) {
+  ASM_CODE_COMMENT(this);
+  DCHECK_LT(lower_limit, higher_limit);
+  if (lower_limit != 0) {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    sub(scratch, value, Operand(lower_limit));
+    cmp(scratch, Operand(higher_limit - lower_limit));
+  } else {
+    cmp(value, Operand(higher_limit));
+  }
+}
 void MacroAssembler::CompareInstanceTypeRange(Register map, Register type_reg,
                                               InstanceType lower_limit,
                                               InstanceType higher_limit) {
   ASM_CODE_COMMENT(this);
   DCHECK_LT(lower_limit, higher_limit);
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
   ldrh(type_reg, FieldMemOperand(map, Map::kInstanceTypeOffset));
-  sub(scratch, type_reg, Operand(lower_limit));
-  cmp(scratch, Operand(higher_limit - lower_limit));
+  CompareRange(type_reg, lower_limit, higher_limit);
 }
 
 void MacroAssembler::CompareRoot(Register obj, RootIndex index) {
@@ -1898,14 +1863,7 @@ void MacroAssembler::JumpIfIsInRange(Register value, unsigned lower_limit,
                                      unsigned higher_limit,
                                      Label* on_in_range) {
   ASM_CODE_COMMENT(this);
-  if (lower_limit != 0) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    sub(scratch, value, Operand(lower_limit));
-    cmp(scratch, Operand(higher_limit - lower_limit));
-  } else {
-    cmp(value, Operand(higher_limit));
-  }
+  CompareRange(value, lower_limit, higher_limit);
   b(ls, on_in_range);
 }
 
@@ -2016,7 +1974,7 @@ void MacroAssembler::JumpToExternalReference(const ExternalReference& builtin,
   Jump(code, RelocInfo::CODE_TARGET);
 }
 
-void MacroAssembler::JumpToInstructionStream(Address entry) {
+void MacroAssembler::JumpToOffHeapInstructionStream(Address entry) {
   mov(kOffHeapTrampolineRegister, Operand(entry, RelocInfo::OFF_HEAP_TARGET));
   Jump(kOffHeapTrampolineRegister);
 }
@@ -2089,7 +2047,7 @@ void TurboAssembler::Abort(AbortReason reason) {
 
   if (should_abort_hard()) {
     // We don't care if we constructed a frame. Just pretend we did.
-    FrameScope assume_frame(this, StackFrame::NONE);
+    FrameScope assume_frame(this, StackFrame::NO_FRAME_TYPE);
     Move32BitImmediate(r0, Operand(static_cast<int>(reason)));
     PrepareCallCFunction(1, 0, r1);
     Move(r1, ExternalReference::abort_with_reason());
@@ -2105,7 +2063,7 @@ void TurboAssembler::Abort(AbortReason reason) {
   if (!has_frame()) {
     // We don't actually want to generate a pile of code for this, so just
     // claim there is a stack frame, without generating one.
-    FrameScope scope(this, StackFrame::NONE);
+    FrameScope scope(this, StackFrame::NO_FRAME_TYPE);
     Call(BUILTIN_CODE(isolate(), Abort), RelocInfo::CODE_TARGET);
   } else {
     Call(BUILTIN_CODE(isolate(), Abort), RelocInfo::CODE_TARGET);
@@ -2210,6 +2168,20 @@ void MacroAssembler::AssertFunction(Register object) {
                            LAST_JS_FUNCTION_TYPE);
   pop(object);
   Check(ls, AbortReason::kOperandIsNotAFunction);
+}
+
+void MacroAssembler::AssertCallableFunction(Register object) {
+  if (!FLAG_debug_code) return;
+  ASM_CODE_COMMENT(this);
+  STATIC_ASSERT(kSmiTag == 0);
+  tst(object, Operand(kSmiTagMask));
+  Check(ne, AbortReason::kOperandIsASmiAndNotAFunction);
+  push(object);
+  LoadMap(object, object);
+  CompareInstanceTypeRange(object, object, FIRST_CALLABLE_JS_FUNCTION_TYPE,
+                           LAST_CALLABLE_JS_FUNCTION_TYPE);
+  pop(object);
+  Check(ls, AbortReason::kOperandIsNotACallableFunction);
 }
 
 void MacroAssembler::AssertBoundFunction(Register object) {
@@ -2643,19 +2615,13 @@ void TurboAssembler::CheckPageFlag(Register object, int mask, Condition cc,
 Register GetRegisterThatIsNotOneOf(Register reg1, Register reg2, Register reg3,
                                    Register reg4, Register reg5,
                                    Register reg6) {
-  RegList regs = 0;
-  if (reg1.is_valid()) regs |= reg1.bit();
-  if (reg2.is_valid()) regs |= reg2.bit();
-  if (reg3.is_valid()) regs |= reg3.bit();
-  if (reg4.is_valid()) regs |= reg4.bit();
-  if (reg5.is_valid()) regs |= reg5.bit();
-  if (reg6.is_valid()) regs |= reg6.bit();
+  RegList regs = {reg1, reg2, reg3, reg4, reg5, reg6};
 
   const RegisterConfiguration* config = RegisterConfiguration::Default();
   for (int i = 0; i < config->num_allocatable_general_registers(); ++i) {
     int code = config->GetAllocatableGeneralCode(i);
     Register candidate = Register::from_code(code);
-    if (regs & candidate.bit()) continue;
+    if (regs.has(candidate)) continue;
     return candidate;
   }
   UNREACHABLE();
@@ -2682,15 +2648,8 @@ void TurboAssembler::CallForDeoptimization(Builtin target, int, Label* exit,
       MemOperand(kRootRegister, IsolateData::BuiltinEntrySlotOffset(target)));
   Call(ip);
   DCHECK_EQ(SizeOfCodeGeneratedSince(exit),
-            (kind == DeoptimizeKind::kLazy)
-                ? Deoptimizer::kLazyDeoptExitSize
-                : Deoptimizer::kNonLazyDeoptExitSize);
-
-  if (kind == DeoptimizeKind::kEagerWithResume) {
-    b(ret);
-    DCHECK_EQ(SizeOfCodeGeneratedSince(exit),
-              Deoptimizer::kEagerWithResumeBeforeArgsSize);
-  }
+            (kind == DeoptimizeKind::kLazy) ? Deoptimizer::kLazyDeoptExitSize
+                                            : Deoptimizer::kEagerDeoptExitSize);
 
   // The above code must not emit constants either.
   DCHECK(!has_pending_constants());

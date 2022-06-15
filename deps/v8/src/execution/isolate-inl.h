@@ -34,6 +34,7 @@ NativeContext Isolate::raw_native_context() {
 }
 
 void Isolate::set_pending_message(Object message_obj) {
+  DCHECK(message_obj.IsTheHole(this) || message_obj.IsJSMessageObject());
   thread_local_top()->pending_message_ = message_obj;
 }
 
@@ -50,7 +51,7 @@ bool Isolate::has_pending_message() {
 }
 
 Object Isolate::pending_exception() {
-  DCHECK(has_pending_exception());
+  CHECK(has_pending_exception());
   DCHECK(!thread_local_top()->pending_exception_.IsException(this));
   return thread_local_top()->pending_exception_;
 }

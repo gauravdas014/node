@@ -14,6 +14,7 @@
 #include "src/base/memory.h"
 #include "src/base/strings.h"
 #include "src/base/v8-fallthrough.h"
+#include "src/codegen/x64/fma-instr.h"
 #include "src/codegen/x64/register-x64.h"
 #include "src/codegen/x64/sse-instr.h"
 #include "src/common/globals.h"
@@ -891,97 +892,7 @@ int DisassemblerX64::AVXInstruction(byte* data) {
     switch (opcode) {
       case 0x18:
         AppendToBuffer("vbroadcastss %s,", NameOfAVXRegister(regop));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x98:
-        AppendToBuffer("vfmadd132p%c %s,%s,", float_size_code(),
-                       NameOfXMMRegister(regop), NameOfXMMRegister(vvvv));
         current += PrintRightXMMOperand(current);
-        break;
-      case 0x99:
-        AppendToBuffer("vfmadd132s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xA8:
-        AppendToBuffer("vfmadd213p%c %s,%s,", float_size_code(),
-                       NameOfXMMRegister(regop), NameOfXMMRegister(vvvv));
-        current += PrintRightXMMOperand(current);
-        break;
-      case 0xA9:
-        AppendToBuffer("vfmadd213s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xB8:
-        AppendToBuffer("vfmadd231p%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xB9:
-        AppendToBuffer("vfmadd231s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x9B:
-        AppendToBuffer("vfmsub132s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x9C:
-        AppendToBuffer("vfnmadd132p%c %s,%s,", float_size_code(),
-                       NameOfXMMRegister(regop), NameOfXMMRegister(vvvv));
-        current += PrintRightXMMOperand(current);
-        break;
-      case 0xAB:
-        AppendToBuffer("vfmsub213s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xAC:
-        AppendToBuffer("vfnmadd213p%c %s,%s,", float_size_code(),
-                       NameOfXMMRegister(regop), NameOfXMMRegister(vvvv));
-        current += PrintRightXMMOperand(current);
-        break;
-      case 0xBB:
-        AppendToBuffer("vfmsub231s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xBC:
-        AppendToBuffer("vfnmadd231p%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x9D:
-        AppendToBuffer("vfnmadd132s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xAD:
-        AppendToBuffer("vfnmadd213s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xBD:
-        AppendToBuffer("vfnmadd231s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x9F:
-        AppendToBuffer("vfnmsub132s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xAF:
-        AppendToBuffer("vfnmsub213s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0xBF:
-        AppendToBuffer("vfnmsub231s%c %s,%s,", float_size_code(),
-                       NameOfAVXRegister(regop), NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
         break;
       case 0xF7:
         AppendToBuffer("shlx%c %s,", operand_size_code(),
@@ -1017,13 +928,40 @@ int DisassemblerX64::AVXInstruction(byte* data) {
 #define DISASSEMBLE_AVX2_BROADCAST(instruction, _1, _2, _3, code)     \
   case 0x##code:                                                      \
     AppendToBuffer("" #instruction " %s,", NameOfAVXRegister(regop)); \
-    current += PrintRightAVXOperand(current);                         \
+    current += PrintRightXMMOperand(current);                         \
     break;
         AVX2_BROADCAST_LIST(DISASSEMBLE_AVX2_BROADCAST)
 #undef DISASSEMBLE_AVX2_BROADCAST
 
-      default:
-        UnimplementedInstruction();
+      default: {
+#define DECLARE_FMA_DISASM(instruction, _1, _2, _3, _4, _5, code)    \
+  case 0x##code: {                                                   \
+    AppendToBuffer(#instruction " %s,%s,", NameOfAVXRegister(regop), \
+                   NameOfAVXRegister(vvvv));                         \
+    current += PrintRightAVXOperand(current);                        \
+    break;                                                           \
+  }
+        // Handle all the fma instructions here in the default branch since they
+        // have the same opcodes but differ by rex_w.
+        if (rex_w()) {
+          switch (opcode) {
+            FMA_SS_INSTRUCTION_LIST(DECLARE_FMA_DISASM)
+            FMA_PS_INSTRUCTION_LIST(DECLARE_FMA_DISASM)
+            default: {
+              UnimplementedInstruction();
+            }
+          }
+        } else {
+          switch (opcode) {
+            FMA_SD_INSTRUCTION_LIST(DECLARE_FMA_DISASM)
+            FMA_PD_INSTRUCTION_LIST(DECLARE_FMA_DISASM)
+            default: {
+              UnimplementedInstruction();
+            }
+          }
+        }
+#undef DECLARE_FMA_DISASM
+      }
     }
   } else if (vex_66() && vex_0f3a()) {
     int mod, regop, rm, vvvv = vex_vreg();
@@ -1066,22 +1004,22 @@ int DisassemblerX64::AVXInstruction(byte* data) {
       case 0x14:
         AppendToBuffer("vpextrb ");
         current += PrintRightByteOperand(current);
-        AppendToBuffer(",%s,0x%x,", NameOfAVXRegister(regop), *current++);
+        AppendToBuffer(",%s,0x%x", NameOfAVXRegister(regop), *current++);
         break;
       case 0x15:
         AppendToBuffer("vpextrw ");
         current += PrintRightOperand(current);
-        AppendToBuffer(",%s,0x%x,", NameOfAVXRegister(regop), *current++);
+        AppendToBuffer(",%s,0x%x", NameOfAVXRegister(regop), *current++);
         break;
       case 0x16:
         AppendToBuffer("vpextr%c ", rex_w() ? 'q' : 'd');
         current += PrintRightOperand(current);
-        AppendToBuffer(",%s,0x%x,", NameOfAVXRegister(regop), *current++);
+        AppendToBuffer(",%s,0x%x", NameOfAVXRegister(regop), *current++);
         break;
       case 0x17:
         AppendToBuffer("vextractps ");
         current += PrintRightOperand(current);
-        AppendToBuffer(",%s,0x%x,", NameOfAVXRegister(regop), *current++);
+        AppendToBuffer(",%s,0x%x", NameOfAVXRegister(regop), *current++);
         break;
       case 0x20:
         AppendToBuffer("vpinsrb %s,%s,", NameOfAVXRegister(regop),
@@ -1220,6 +1158,13 @@ int DisassemblerX64::AVXInstruction(byte* data) {
         AppendToBuffer("vcvtdq2pd %s,", NameOfAVXRegister(regop));
         current += PrintRightAVXOperand(current);
         break;
+      case 0xC2:
+        AppendToBuffer("vcmpss %s,%s,", NameOfAVXRegister(regop),
+                       NameOfAVXRegister(vvvv));
+        current += PrintRightAVXOperand(current);
+        AppendToBuffer(", (%s)", cmp_pseudo_op[*current]);
+        current += 1;
+        break;
       default:
         UnimplementedInstruction();
     }
@@ -1261,46 +1206,6 @@ int DisassemblerX64::AVXInstruction(byte* data) {
                        NameOfCPURegister(regop));
         current += PrintRightAVXOperand(current);
         break;
-      case 0x51:
-        AppendToBuffer("vsqrtsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x58:
-        AppendToBuffer("vaddsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x59:
-        AppendToBuffer("vmulsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x5A:
-        AppendToBuffer("vcvtsd2ss %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x5C:
-        AppendToBuffer("vsubsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x5D:
-        AppendToBuffer("vminsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x5E:
-        AppendToBuffer("vdivsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
-      case 0x5F:
-        AppendToBuffer("vmaxsd %s,%s,", NameOfAVXRegister(regop),
-                       NameOfAVXRegister(vvvv));
-        current += PrintRightAVXOperand(current);
-        break;
       case 0xF0:
         AppendToBuffer("vlddqu %s,", NameOfAVXRegister(regop));
         current += PrintRightAVXOperand(current);
@@ -1315,6 +1220,21 @@ int DisassemblerX64::AVXInstruction(byte* data) {
                        NameOfAVXRegister(vvvv));
         current += PrintRightAVXOperand(current);
         break;
+      case 0xC2:
+        AppendToBuffer("vcmpsd %s,%s,", NameOfAVXRegister(regop),
+                       NameOfAVXRegister(vvvv));
+        current += PrintRightAVXOperand(current);
+        AppendToBuffer(", (%s)", cmp_pseudo_op[*current]);
+        current += 1;
+        break;
+#define DISASM_SSE2_INSTRUCTION_LIST_SD(instruction, _1, _2, opcode)     \
+  case 0x##opcode:                                                       \
+    AppendToBuffer("v" #instruction " %s,%s,", NameOfAVXRegister(regop), \
+                   NameOfAVXRegister(vvvv));                             \
+    current += PrintRightAVXOperand(current);                            \
+    break;
+        SSE2_INSTRUCTION_LIST_SD(DISASM_SSE2_INSTRUCTION_LIST_SD)
+#undef DISASM_SSE2_INSTRUCTION_LIST_SD
       default:
         UnimplementedInstruction();
     }
@@ -1988,7 +1908,6 @@ int DisassemblerX64::TwoByteOpcodeInstruction(byte* data) {
     } else if (opcode == 0xD7) {
       current += PrintOperands("pmovmskb", OPER_XMMREG_OP_ORDER, current);
     } else {
-      const char* mnemonic;
 #define SSE2_CASE(instruction, notUsed1, notUsed2, opcode) \
   case 0x##opcode:                                         \
     mnemonic = "" #instruction;                            \
@@ -2096,6 +2015,10 @@ int DisassemblerX64::TwoByteOpcodeInstruction(byte* data) {
       current += 2;
     } else if (opcode == 0xE6) {
       current += PrintOperands("cvtdq2pd", XMMREG_XMMOPER_OP_ORDER, current);
+    } else if (opcode == 0xAE) {
+      // incssp[d|q]
+      AppendToBuffer("incssp%c ", operand_size_code());
+      current += PrintRightOperand(current);
     } else {
       UnimplementedInstruction();
     }
@@ -2387,6 +2310,8 @@ const char* DisassemblerX64::TwoByteMnemonic(byte opcode) {
       return "movsxb";
     case 0xBF:
       return "movsxw";
+    case 0xC2:
+      return "cmpss";
     default:
       return nullptr;
   }
@@ -2843,9 +2768,9 @@ int DisassemblerX64::InstructionDecode(v8::base::Vector<char> out_buffer,
   for (byte* bp = instr; bp < data; bp++) {
     outp += v8::base::SNPrintF(out_buffer + outp, "%02x", *bp);
   }
-  // Indent instruction, leaving space for 9 bytes, i.e. 18 characters in hex.
-  // 9-byte nop and rip-relative mov are (probably) the largest we emit.
-  while (outp < 18) {
+  // Indent instruction, leaving space for 10 bytes, i.e. 20 characters in hex.
+  // 10-byte mov is (probably) the largest we emit.
+  while (outp < 20) {
     outp += v8::base::SNPrintF(out_buffer + outp, "  ");
   }
 

@@ -47,7 +47,7 @@ get_bindAddress: for (const name in networkInterfaces) {
   const interfaces = networkInterfaces[name];
   for (let i = 0; i < interfaces.length; i++) {
     const localInterface = interfaces[i];
-    if (!localInterface.internal && localInterface.family === 'IPv4') {
+    if (!localInterface.internal && localInterface.family === 4) {
       bindAddress = localInterface.address;
       break get_bindAddress;
     }
@@ -184,7 +184,9 @@ if (process.argv[2] !== 'child') {
     const buf = messages[i++];
 
     if (!buf) {
-      try { sendSocket.close(); } catch {}
+      try { sendSocket.close(); } catch {
+        // Continue regardless of error.
+      }
       return;
     }
 

@@ -35,7 +35,7 @@ CallPrinter::CallPrinter(Isolate* isolate, bool is_user_js,
   is_user_js_ = is_user_js;
   error_in_spread_args_ = error_in_spread_args;
   spread_arg_ = nullptr;
-  function_kind_ = kNormalFunction;
+  function_kind_ = FunctionKind::kNormalFunction;
   InitializeAstVisitor(isolate);
 }
 
@@ -346,17 +346,12 @@ void CallPrinter::VisitAssignment(Assignment* node) {
     Find(node->target());
     if (node->target()->IsArrayLiteral()) {
       // Special case the visit for destructuring array assignment.
-      bool was_found = false;
       if (node->value()->position() == position_) {
         is_iterator_error_ = true;
         was_found = !found_;
         found_ = true;
       }
       Find(node->value(), true);
-      if (was_found) {
-        done_ = true;
-        found_ = false;
-      }
     } else {
       Find(node->value());
     }
@@ -828,7 +823,7 @@ const char* AstPrinter::PrintProgram(FunctionLiteral* program) {
   Init();
   { IndentedScope indent(this, "FUNC", program->position());
     PrintIndented("KIND");
-    Print(" %d\n", program->kind());
+    Print(" %d\n", static_cast<uint32_t>(program->kind()));
     PrintIndented("LITERAL ID");
     Print(" %d\n", program->function_literal_id());
     PrintIndented("SUSPEND COUNT");
@@ -967,7 +962,7 @@ void AstPrinter::VisitWithStatement(WithStatement* node) {
 
 
 void AstPrinter::VisitSwitchStatement(SwitchStatement* node) {
-  IndentedScope indent(this, "SWITCH", node->position());
+  IndentedScope switch_indent(this, "SWITCH", node->position());
   PrintIndentedVisit("TAG", node->tag());
   for (CaseClause* clause : *node->cases()) {
     if (clause->is_default()) {
@@ -1247,7 +1242,7 @@ void AstPrinter::PrintObjectProperties(
 
 
 void AstPrinter::VisitArrayLiteral(ArrayLiteral* node) {
-  IndentedScope indent(this, "ARRAY LITERAL", node->position());
+  IndentedScope array_indent(this, "ARRAY LITERAL", node->position());
   if (node->values()->length() > 0) {
     IndentedScope indent(this, "VALUES", node->position());
     for (int i = 0; i < node->values()->length(); i++) {

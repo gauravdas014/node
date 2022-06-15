@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2014 the V8 project authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -102,11 +103,9 @@ Path pieces are concatenated. D8 is always run with the suite's path as cwd.
 The test flags are passed to the js test file after '--'.
 """
 
-# for py2/py3 compatibility
-from __future__ import print_function
-from functools import reduce
-
 from collections import OrderedDict
+from math import sqrt
+from statistics import mean, stdev
 import copy
 import json
 import logging
@@ -119,18 +118,11 @@ import sys
 import time
 import traceback
 
-import numpy
-
 from testrunner.local import android
 from testrunner.local import command
 from testrunner.local import utils
 from testrunner.objects.output import Output, NULL_OUTPUT
 
-# for py2/py3 compatibility
-try:
-  basestring       # Python 2
-except NameError:  # Python 3
-  basestring = str
 
 SUPPORTED_ARCHS = ['arm',
                    'ia32',
@@ -265,11 +257,12 @@ class ResultTracker(object):
       return False
 
     logging.debug('  Results: %d entries', len(results))
-    mean = numpy.mean(results)
-    mean_stderr = numpy.std(results) / numpy.sqrt(len(results))
-    logging.debug('  Mean: %.2f, mean_stderr: %.2f', mean, mean_stderr)
-    logging.info('>>> Confidence level is %.2f', mean / (1000.0 * mean_stderr))
-    return confidence_level * mean_stderr < mean / 1000.0
+    avg = mean(results)
+    avg_stderr = stdev(results) / sqrt(len(results))
+    logging.debug('  Mean: %.2f, mean_stderr: %.2f', avg, avg_stderr)
+    logging.info('>>> Confidence level is %.2f',
+                 avg / max(1000.0 * avg_stderr, .1))
+    return confidence_level * avg_stderr < avg / 1000.0
 
   def __str__(self):  # pragma: no cover
     return json.dumps(self.ToDict(), indent=2, separators=(',', ': '))
@@ -289,7 +282,8 @@ def RunResultsProcessor(results_processor, output, count):
       stderr=subprocess.PIPE,
   )
   new_output = copy.copy(output)
-  new_output.stdout, _ = p.communicate(input=output.stdout)
+  new_output.stdout = p.communicate(
+      input=output.stdout.encode('utf-8'))[0].decode('utf-8')
   logging.info('>>> Processed stdout (#%d):\n%s', count, output.stdout)
   return new_output
 
@@ -340,7 +334,7 @@ class GraphConfig(Node):
 
     assert isinstance(suite.get('path', []), list)
     assert isinstance(suite.get('owners', []), list)
-    assert isinstance(suite['name'], basestring)
+    assert isinstance(suite['name'], str)
     assert isinstance(suite.get('flags', []), list)
     assert isinstance(suite.get('test_flags', []), list)
     assert isinstance(suite.get('resources', []), list)
@@ -459,7 +453,9 @@ class RunnableConfig(GraphConfig):
     """
     suite_dir = os.path.abspath(os.path.dirname(suite_path))
     bench_dir = os.path.normpath(os.path.join(*self.path))
-    os.chdir(os.path.join(suite_dir, bench_dir))
+    cwd = os.path.join(suite_dir, bench_dir)
+    logging.debug('Changing CWD to: %s' % cwd)
+    os.chdir(cwd)
 
   def GetCommandFlags(self, extra_flags=None):
     suffix = ['--'] + self.test_flags if self.test_flags else []
@@ -702,6 +698,7 @@ class DesktopPlatform(Platform):
   def _Run(self, runnable, count, secondary=False):
     shell_dir = self.shell_dir_secondary if secondary else self.shell_dir
     cmd = runnable.GetCommand(self.command_prefix, shell_dir, self.extra_flags)
+    logging.debug('Running command: %s' % cmd)
     output = cmd.execute()
 
     if output.IsSuccess() and '--prof' in self.extra_flags:

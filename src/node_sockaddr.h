@@ -131,7 +131,7 @@ class SocketAddress : public MemoryRetainer {
   static SocketAddress FromPeerName(const uv_udp_t& handle);
   static SocketAddress FromPeerName(const uv_tcp_t& handle);
 
-  inline v8::Local<v8::Object> ToJS(
+  inline v8::MaybeLocal<v8::Object> ToJS(
       Environment* env,
       v8::Local<v8::Object> obj = v8::Local<v8::Object>()) const;
 
@@ -400,6 +400,6 @@ class SocketAddressBlockListWrap : public BaseObject {
 
 }  // namespace node
 
-#endif  // NOE_WANT_INTERNALS
+#endif  // defined(NODE_WANT_INTERNALS) && NODE_WANT_INTERNALS
 
 #endif  // SRC_NODE_SOCKADDR_H_

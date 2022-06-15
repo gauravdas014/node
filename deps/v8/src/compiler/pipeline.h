@@ -18,7 +18,7 @@ namespace internal {
 
 struct AssemblerOptions;
 class OptimizedCompilationInfo;
-class OptimizedCompilationJob;
+class TurbofanCompilationJob;
 class ProfileDataFromFile;
 class RegisterConfiguration;
 
@@ -48,7 +48,7 @@ struct WasmLoopInfo;
 class Pipeline : public AllStatic {
  public:
   // Returns a new compilation job for the given JavaScript function.
-  static V8_EXPORT_PRIVATE std::unique_ptr<OptimizedCompilationJob>
+  static V8_EXPORT_PRIVATE std::unique_ptr<TurbofanCompilationJob>
   NewCompilationJob(Isolate* isolate, Handle<JSFunction> function,
                     CodeKind code_kind, bool has_script,
                     BytecodeOffset osr_offset = BytecodeOffset::None(),
@@ -66,12 +66,11 @@ class Pipeline : public AllStatic {
   // Run the pipeline on a machine graph and generate code.
   static wasm::WasmCompilationResult GenerateCodeForWasmNativeStub(
       CallDescriptor* call_descriptor, MachineGraph* mcgraph, CodeKind kind,
-      int wasm_kind, const char* debug_name,
-      const AssemblerOptions& assembler_options,
+      const char* debug_name, const AssemblerOptions& assembler_options,
       SourcePositionTable* source_positions = nullptr);
 
   // Returns a new compilation job for a wasm heap stub.
-  static std::unique_ptr<OptimizedCompilationJob> NewWasmHeapStubCompilationJob(
+  static std::unique_ptr<TurbofanCompilationJob> NewWasmHeapStubCompilationJob(
       Isolate* isolate, CallDescriptor* call_descriptor,
       std::unique_ptr<Zone> zone, Graph* graph, CodeKind kind,
       std::unique_ptr<char[]> debug_name, const AssemblerOptions& options,

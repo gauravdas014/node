@@ -1139,9 +1139,9 @@ uintptr_t Simulator::StackLimit(uintptr_t c_limit) const {
     return reinterpret_cast<uintptr_t>(get_sp());
   }
 
-  // Otherwise the limit is the JS stack. Leave a safety margin of 1024 bytes
+  // Otherwise the limit is the JS stack. Leave a safety margin of 4 KiB
   // to prevent overrunning the stack when pushing values.
-  return reinterpret_cast<uintptr_t>(stack_) + 1024;
+  return reinterpret_cast<uintptr_t>(stack_) + 4 * KB;
 }
 
 // Unsupported instructions use Format to print an error and stop execution.
@@ -1595,11 +1595,11 @@ void Simulator::HandleVList(Instruction* instr) {
 // 64-bit value. With the code below we assume that all runtime calls return
 // 64 bits of result. If they don't, the r1 result register contains a bogus
 // value, which is fine because it is caller-saved.
-using SimulatorRuntimeCall = int64_t (*)(int32_t arg0, int32_t arg1,
-                                         int32_t arg2, int32_t arg3,
-                                         int32_t arg4, int32_t arg5,
-                                         int32_t arg6, int32_t arg7,
-                                         int32_t arg8, int32_t arg9);
+using SimulatorRuntimeCall = int64_t (*)(
+    int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4,
+    int32_t arg5, int32_t arg6, int32_t arg7, int32_t arg8, int32_t arg9,
+    int32_t arg10, int32_t arg11, int32_t arg12, int32_t arg13, int32_t arg14,
+    int32_t arg15, int32_t arg16, int32_t arg17, int32_t arg18, int32_t arg19);
 
 // These prototypes handle the four types of FP calls.
 using SimulatorRuntimeCompareCall = int64_t (*)(double darg0, double darg1);
@@ -1624,10 +1624,15 @@ using SimulatorRuntimeProfilingGetterCall = void (*)(int32_t arg0, int32_t arg1,
 int64_t UnsafeGenericFunctionCall(intptr_t function, int32_t arg0, int32_t arg1,
                                   int32_t arg2, int32_t arg3, int32_t arg4,
                                   int32_t arg5, int32_t arg6, int32_t arg7,
-                                  int32_t arg8, int32_t arg9) {
+                                  int32_t arg8, int32_t arg9, int32_t arg10,
+                                  int32_t arg11, int32_t arg12, int32_t arg13,
+                                  int32_t arg14, int32_t arg15, int32_t arg16,
+                                  int32_t arg17, int32_t arg18, int32_t arg19) {
   SimulatorRuntimeCall target =
       reinterpret_cast<SimulatorRuntimeCall>(function);
-  return target(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+  return target(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,
+                arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18,
+                arg19);
 }
 void UnsafeDirectApiCall(intptr_t function, int32_t arg0) {
   SimulatorRuntimeDirectApiCall target =
@@ -1668,7 +1673,17 @@ void Simulator::SoftwareInterrupt(Instruction* instr) {
       int32_t arg7 = stack_pointer[3];
       int32_t arg8 = stack_pointer[4];
       int32_t arg9 = stack_pointer[5];
-      STATIC_ASSERT(kMaxCParameters == 10);
+      int32_t arg10 = stack_pointer[6];
+      int32_t arg11 = stack_pointer[7];
+      int32_t arg12 = stack_pointer[8];
+      int32_t arg13 = stack_pointer[9];
+      int32_t arg14 = stack_pointer[10];
+      int32_t arg15 = stack_pointer[11];
+      int32_t arg16 = stack_pointer[12];
+      int32_t arg17 = stack_pointer[13];
+      int32_t arg18 = stack_pointer[14];
+      int32_t arg19 = stack_pointer[15];
+      STATIC_ASSERT(kMaxCParameters == 20);
 
       bool fp_call =
           (redirection->type() == ExternalReference::BUILTIN_FP_FP_CALL) ||
@@ -1835,23 +1850,38 @@ void Simulator::SoftwareInterrupt(Instruction* instr) {
 #endif
       } else {
         // builtin call.
+        // FAST_C_CALL is temporarily handled here as well, because we lack
+        // proper support for direct C calls with FP params in the simulator.
+        // The generic BUILTIN_CALL path assumes all parameters are passed in
+        // the GP registers, thus supporting calling the slow callback without
+        // crashing. The reason for that is that in the mjsunit tests we check
+        // the `fast_c_api.supports_fp_params` (which is false on non-simulator
+        // builds for arm/arm64), thus we expect that the slow path will be
+        // called. And since the slow path passes the arguments as a `const
+        // FunctionCallbackInfo<Value>&` (which is a GP argument), the call is
+        // made correctly.
         DCHECK(redirection->type() == ExternalReference::BUILTIN_CALL ||
-               redirection->type() == ExternalReference::BUILTIN_CALL_PAIR);
+               redirection->type() == ExternalReference::BUILTIN_CALL_PAIR ||
+               redirection->type() == ExternalReference::FAST_C_CALL);
         if (::v8::internal::FLAG_trace_sim || !stack_aligned) {
           PrintF(
               "Call to host function at %p "
-              "args %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x",
+              "args %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, "
+              "%08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x, "
+              "%08x",
               reinterpret_cast<void*>(external), arg0, arg1, arg2, arg3, arg4,
-              arg5, arg6, arg7, arg8, arg9);
+              arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14,
+              arg15, arg16, arg17, arg18, arg19);
           if (!stack_aligned) {
             PrintF(" with unaligned stack %08x\n", get_register(sp));
           }
           PrintF("\n");
         }
         CHECK(stack_aligned);
-        int64_t result =
-            UnsafeGenericFunctionCall(external, arg0, arg1, arg2, arg3, arg4,
-                                      arg5, arg6, arg7, arg8, arg9);
+        int64_t result = UnsafeGenericFunctionCall(
+            external, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8,
+            arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18,
+            arg19);
 #ifdef DEBUG
         TrashCallerSaveRegisters();
 #endif

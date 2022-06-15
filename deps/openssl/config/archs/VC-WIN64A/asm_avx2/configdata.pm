@@ -168,7 +168,7 @@ our %config = (
     ],
     "dynamic_engines" => "0",
     "ex_libs" => [],
-    "full_version" => "3.0.0+quic",
+    "full_version" => "3.0.3+quic",
     "includes" => [],
     "lflags" => [],
     "lib_defines" => [
@@ -219,10 +219,10 @@ our %config = (
     ],
     "openssldir" => "",
     "options" => "enable-ssl-trace enable-fips no-afalgeng no-asan no-buildtest-c++ no-comp no-crypto-mdebug no-crypto-mdebug-backtrace no-devcryptoeng no-dynamic-engine no-ec_nistp_64_gcc_128 no-egd no-external-tests no-fuzz-afl no-fuzz-libfuzzer no-ktls no-loadereng no-md2 no-msan no-rc5 no-sctp no-shared no-ssl3 no-ssl3-method no-trace no-ubsan no-unit-test no-uplink no-weak-ssl-ciphers no-zlib no-zlib-dynamic",
-    "patch" => "0",
+    "patch" => "3",
     "perl_archname" => "x86_64-linux-thread-multi",
     "perl_cmd" => "/usr/bin/perl",
-    "perl_version" => "5.32.1",
+    "perl_version" => "5.34.1",
     "perlargv" => [
         "no-comp",
         "no-shared",
@@ -271,11 +271,11 @@ our %config = (
     "prerelease" => "",
     "processor" => "",
     "rc4_int" => "unsigned int",
-    "release_date" => "7 sep 2021",
+    "release_date" => "3 May 2022",
     "shlib_version" => "81.3",
     "sourcedir" => ".",
     "target" => "VC-WIN64A",
-    "version" => "3.0.0"
+    "version" => "3.0.3"
 );
 our %target = (
     "AR" => "lib",
@@ -290,7 +290,7 @@ our %target = (
     "LDFLAGS" => "/nologo /debug",
     "MT" => "mt",
     "MTFLAGS" => "-nologo",
-    "RANLIB" => "CODE(0x564001d8ca70)",
+    "RANLIB" => "CODE(0x55c4f0a0f3f8)",
     "RC" => "rc",
     "_conf_fname_int" => [
         "Configurations/00-base-templates.conf",
@@ -1298,6 +1298,9 @@ our %unified_info = (
             "test/evp_libctx_test" => {
                 "noinst" => "1"
             },
+            "test/evp_pkey_ctx_new_from_name" => {
+                "noinst" => "1"
+            },
             "test/evp_pkey_dparams_test" => {
                 "noinst" => "1"
             },
@@ -1341,6 +1344,9 @@ our %unified_info = (
                 "noinst" => "1"
             },
             "test/lhash_test" => {
+                "noinst" => "1"
+            },
+            "test/localetest" => {
                 "noinst" => "1"
             },
             "test/mdc2_internal_test" => {
@@ -1421,6 +1427,9 @@ our %unified_info = (
             "test/provider_internal_test" => {
                 "noinst" => "1"
             },
+            "test/provider_pkey_test" => {
+                "noinst" => "1"
+            },
             "test/provider_status_test" => {
                 "noinst" => "1"
             },
@@ -1428,6 +1437,9 @@ our %unified_info = (
                 "noinst" => "1"
             },
             "test/rand_status_test" => {
+                "noinst" => "1"
+            },
+            "test/rand_test" => {
                 "noinst" => "1"
             },
             "test/rc2test" => {
@@ -2770,8 +2782,8 @@ our %unified_info = (
         "doc/html/man3/EVP_RAND.html" => [
             "doc/man3/EVP_RAND.pod"
         ],
-        "doc/html/man3/EVP_SIGNATURE_free.html" => [
-            "doc/man3/EVP_SIGNATURE_free.pod"
+        "doc/html/man3/EVP_SIGNATURE.html" => [
+            "doc/man3/EVP_SIGNATURE.pod"
         ],
         "doc/html/man3/EVP_SealInit.html" => [
             "doc/man3/EVP_SealInit.pod"
@@ -2937,6 +2949,9 @@ our %unified_info = (
         ],
         "doc/html/man3/OPENSSL_secure_malloc.html" => [
             "doc/man3/OPENSSL_secure_malloc.pod"
+        ],
+        "doc/html/man3/OPENSSL_strcasecmp.html" => [
+            "doc/man3/OPENSSL_strcasecmp.pod"
         ],
         "doc/html/man3/OSSL_CMP_CTX_new.html" => [
             "doc/man3/OSSL_CMP_CTX_new.pod"
@@ -3604,6 +3619,9 @@ our %unified_info = (
         "doc/html/man3/SSL_get_all_async_fds.html" => [
             "doc/man3/SSL_get_all_async_fds.pod"
         ],
+        "doc/html/man3/SSL_get_certificate.html" => [
+            "doc/man3/SSL_get_certificate.pod"
+        ],
         "doc/html/man3/SSL_get_ciphers.html" => [
             "doc/man3/SSL_get_ciphers.pod"
         ],
@@ -3702,6 +3720,9 @@ our %unified_info = (
         ],
         "doc/html/man3/SSL_set_fd.html" => [
             "doc/man3/SSL_set_fd.pod"
+        ],
+        "doc/html/man3/SSL_set_retry_verify.html" => [
+            "doc/man3/SSL_set_retry_verify.pod"
         ],
         "doc/html/man3/SSL_set_session.html" => [
             "doc/man3/SSL_set_session.pod"
@@ -5107,8 +5128,8 @@ our %unified_info = (
         "doc/man/man3/EVP_RAND.3" => [
             "doc/man3/EVP_RAND.pod"
         ],
-        "doc/man/man3/EVP_SIGNATURE_free.3" => [
-            "doc/man3/EVP_SIGNATURE_free.pod"
+        "doc/man/man3/EVP_SIGNATURE.3" => [
+            "doc/man3/EVP_SIGNATURE.pod"
         ],
         "doc/man/man3/EVP_SealInit.3" => [
             "doc/man3/EVP_SealInit.pod"
@@ -5274,6 +5295,9 @@ our %unified_info = (
         ],
         "doc/man/man3/OPENSSL_secure_malloc.3" => [
             "doc/man3/OPENSSL_secure_malloc.pod"
+        ],
+        "doc/man/man3/OPENSSL_strcasecmp.3" => [
+            "doc/man3/OPENSSL_strcasecmp.pod"
         ],
         "doc/man/man3/OSSL_CMP_CTX_new.3" => [
             "doc/man3/OSSL_CMP_CTX_new.pod"
@@ -5941,6 +5965,9 @@ our %unified_info = (
         "doc/man/man3/SSL_get_all_async_fds.3" => [
             "doc/man3/SSL_get_all_async_fds.pod"
         ],
+        "doc/man/man3/SSL_get_certificate.3" => [
+            "doc/man3/SSL_get_certificate.pod"
+        ],
         "doc/man/man3/SSL_get_ciphers.3" => [
             "doc/man3/SSL_get_ciphers.pod"
         ],
@@ -6039,6 +6066,9 @@ our %unified_info = (
         ],
         "doc/man/man3/SSL_set_fd.3" => [
             "doc/man3/SSL_set_fd.pod"
+        ],
+        "doc/man/man3/SSL_set_retry_verify.3" => [
+            "doc/man3/SSL_set_retry_verify.pod"
         ],
         "doc/man/man3/SSL_set_session.3" => [
             "doc/man3/SSL_set_session.pod"
@@ -7655,6 +7685,9 @@ our %unified_info = (
             "libcrypto.a",
             "test/libtestutil.a"
         ],
+        "test/evp_pkey_ctx_new_from_name" => [
+            "libcrypto"
+        ],
         "test/evp_pkey_dparams_test" => [
             "libcrypto",
             "test/libtestutil.a"
@@ -7718,6 +7751,10 @@ our %unified_info = (
         ],
         "test/libtestutil.a" => [
             "libcrypto"
+        ],
+        "test/localetest" => [
+            "libcrypto",
+            "test/libtestutil.a"
         ],
         "test/mdc2_internal_test" => [
             "libcrypto.a",
@@ -7823,6 +7860,10 @@ our %unified_info = (
             "libcrypto.a",
             "test/libtestutil.a"
         ],
+        "test/provider_pkey_test" => [
+            "libcrypto",
+            "test/libtestutil.a"
+        ],
         "test/provider_status_test" => [
             "libcrypto.a",
             "test/libtestutil.a"
@@ -7832,6 +7873,10 @@ our %unified_info = (
             "test/libtestutil.a"
         ],
         "test/rand_status_test" => [
+            "libcrypto",
+            "test/libtestutil.a"
+        ],
+        "test/rand_test" => [
             "libcrypto",
             "test/libtestutil.a"
         ],
@@ -9939,6 +9984,7 @@ our %unified_info = (
                 "providers/implementations/digests/libdefault-lib-blake2s_prov.o",
                 "providers/implementations/digests/libdefault-lib-md5_prov.o",
                 "providers/implementations/digests/libdefault-lib-md5_sha1_prov.o",
+                "providers/implementations/digests/libdefault-lib-null_prov.o",
                 "providers/implementations/digests/libdefault-lib-sha2_prov.o",
                 "providers/implementations/digests/libdefault-lib-sha3_prov.o",
                 "providers/implementations/digests/libdefault-lib-sm3_prov.o",
@@ -10552,7 +10598,7 @@ our %unified_info = (
         "crypto/chacha/chacha-c64xplus.S" => [
             "crypto/chacha/asm/chacha-c64xplus.pl"
         ],
-        "crypto/chacha/chacha-ia64.S" => [
+        "crypto/chacha/chacha-ia64.s" => [
             "crypto/chacha/asm/chacha-ia64.pl"
         ],
         "crypto/chacha/chacha-ppc.s" => [
@@ -11704,8 +11750,8 @@ our %unified_info = (
         "doc/html/man3/EVP_RAND.html" => [
             "doc/man3/EVP_RAND.pod"
         ],
-        "doc/html/man3/EVP_SIGNATURE_free.html" => [
-            "doc/man3/EVP_SIGNATURE_free.pod"
+        "doc/html/man3/EVP_SIGNATURE.html" => [
+            "doc/man3/EVP_SIGNATURE.pod"
         ],
         "doc/html/man3/EVP_SealInit.html" => [
             "doc/man3/EVP_SealInit.pod"
@@ -11871,6 +11917,9 @@ our %unified_info = (
         ],
         "doc/html/man3/OPENSSL_secure_malloc.html" => [
             "doc/man3/OPENSSL_secure_malloc.pod"
+        ],
+        "doc/html/man3/OPENSSL_strcasecmp.html" => [
+            "doc/man3/OPENSSL_strcasecmp.pod"
         ],
         "doc/html/man3/OSSL_CMP_CTX_new.html" => [
             "doc/man3/OSSL_CMP_CTX_new.pod"
@@ -12538,6 +12587,9 @@ our %unified_info = (
         "doc/html/man3/SSL_get_all_async_fds.html" => [
             "doc/man3/SSL_get_all_async_fds.pod"
         ],
+        "doc/html/man3/SSL_get_certificate.html" => [
+            "doc/man3/SSL_get_certificate.pod"
+        ],
         "doc/html/man3/SSL_get_ciphers.html" => [
             "doc/man3/SSL_get_ciphers.pod"
         ],
@@ -12636,6 +12688,9 @@ our %unified_info = (
         ],
         "doc/html/man3/SSL_set_fd.html" => [
             "doc/man3/SSL_set_fd.pod"
+        ],
+        "doc/html/man3/SSL_set_retry_verify.html" => [
+            "doc/man3/SSL_set_retry_verify.pod"
         ],
         "doc/html/man3/SSL_set_session.html" => [
             "doc/man3/SSL_set_session.pod"
@@ -14041,8 +14096,8 @@ our %unified_info = (
         "doc/man/man3/EVP_RAND.3" => [
             "doc/man3/EVP_RAND.pod"
         ],
-        "doc/man/man3/EVP_SIGNATURE_free.3" => [
-            "doc/man3/EVP_SIGNATURE_free.pod"
+        "doc/man/man3/EVP_SIGNATURE.3" => [
+            "doc/man3/EVP_SIGNATURE.pod"
         ],
         "doc/man/man3/EVP_SealInit.3" => [
             "doc/man3/EVP_SealInit.pod"
@@ -14208,6 +14263,9 @@ our %unified_info = (
         ],
         "doc/man/man3/OPENSSL_secure_malloc.3" => [
             "doc/man3/OPENSSL_secure_malloc.pod"
+        ],
+        "doc/man/man3/OPENSSL_strcasecmp.3" => [
+            "doc/man3/OPENSSL_strcasecmp.pod"
         ],
         "doc/man/man3/OSSL_CMP_CTX_new.3" => [
             "doc/man3/OSSL_CMP_CTX_new.pod"
@@ -14875,6 +14933,9 @@ our %unified_info = (
         "doc/man/man3/SSL_get_all_async_fds.3" => [
             "doc/man3/SSL_get_all_async_fds.pod"
         ],
+        "doc/man/man3/SSL_get_certificate.3" => [
+            "doc/man3/SSL_get_certificate.pod"
+        ],
         "doc/man/man3/SSL_get_ciphers.3" => [
             "doc/man3/SSL_get_ciphers.pod"
         ],
@@ -14973,6 +15034,9 @@ our %unified_info = (
         ],
         "doc/man/man3/SSL_set_fd.3" => [
             "doc/man3/SSL_set_fd.pod"
+        ],
+        "doc/man/man3/SSL_set_retry_verify.3" => [
+            "doc/man3/SSL_set_retry_verify.pod"
         ],
         "doc/man/man3/SSL_set_session.3" => [
             "doc/man3/SSL_set_session.pod"
@@ -16443,7 +16507,7 @@ our %unified_info = (
             "doc/html/man3/EVP_PKEY_verify.html",
             "doc/html/man3/EVP_PKEY_verify_recover.html",
             "doc/html/man3/EVP_RAND.html",
-            "doc/html/man3/EVP_SIGNATURE_free.html",
+            "doc/html/man3/EVP_SIGNATURE.html",
             "doc/html/man3/EVP_SealInit.html",
             "doc/html/man3/EVP_SignInit.html",
             "doc/html/man3/EVP_VerifyInit.html",
@@ -16499,6 +16563,7 @@ our %unified_info = (
             "doc/html/man3/OPENSSL_malloc.html",
             "doc/html/man3/OPENSSL_s390xcap.html",
             "doc/html/man3/OPENSSL_secure_malloc.html",
+            "doc/html/man3/OPENSSL_strcasecmp.html",
             "doc/html/man3/OSSL_CMP_CTX_new.html",
             "doc/html/man3/OSSL_CMP_HDR_get0_transactionID.html",
             "doc/html/man3/OSSL_CMP_ITAV_set0.html",
@@ -16721,6 +16786,7 @@ our %unified_info = (
             "doc/html/man3/SSL_get0_peer_scts.html",
             "doc/html/man3/SSL_get_SSL_CTX.html",
             "doc/html/man3/SSL_get_all_async_fds.html",
+            "doc/html/man3/SSL_get_certificate.html",
             "doc/html/man3/SSL_get_ciphers.html",
             "doc/html/man3/SSL_get_client_random.html",
             "doc/html/man3/SSL_get_current_cipher.html",
@@ -16754,6 +16820,7 @@ our %unified_info = (
             "doc/html/man3/SSL_set_bio.html",
             "doc/html/man3/SSL_set_connect_state.html",
             "doc/html/man3/SSL_set_fd.html",
+            "doc/html/man3/SSL_set_retry_verify.html",
             "doc/html/man3/SSL_set_session.html",
             "doc/html/man3/SSL_set_shutdown.html",
             "doc/html/man3/SSL_set_verify_result.html",
@@ -18568,6 +18635,10 @@ our %unified_info = (
             "include",
             "apps/include"
         ],
+        "test/evp_pkey_ctx_new_from_name" => [
+            "include",
+            "apps/include"
+        ],
         "test/evp_pkey_dparams_test" => [
             "include",
             "apps/include"
@@ -18755,6 +18826,10 @@ our %unified_info = (
             "apps/include",
             "."
         ],
+        "test/localetest" => [
+            "include",
+            "apps/include"
+        ],
         "test/mdc2_internal_test" => [
             ".",
             "include",
@@ -18870,6 +18945,10 @@ our %unified_info = (
             "apps/include",
             "."
         ],
+        "test/provider_pkey_test" => [
+            "include",
+            "apps/include"
+        ],
         "test/provider_status_test" => [
             "include",
             "apps/include"
@@ -18880,6 +18959,10 @@ our %unified_info = (
             "."
         ],
         "test/rand_status_test" => [
+            "include",
+            "apps/include"
+        ],
+        "test/rand_test" => [
             "include",
             "apps/include"
         ],
@@ -19374,7 +19457,7 @@ our %unified_info = (
             "doc/man/man3/EVP_PKEY_verify.3",
             "doc/man/man3/EVP_PKEY_verify_recover.3",
             "doc/man/man3/EVP_RAND.3",
-            "doc/man/man3/EVP_SIGNATURE_free.3",
+            "doc/man/man3/EVP_SIGNATURE.3",
             "doc/man/man3/EVP_SealInit.3",
             "doc/man/man3/EVP_SignInit.3",
             "doc/man/man3/EVP_VerifyInit.3",
@@ -19430,6 +19513,7 @@ our %unified_info = (
             "doc/man/man3/OPENSSL_malloc.3",
             "doc/man/man3/OPENSSL_s390xcap.3",
             "doc/man/man3/OPENSSL_secure_malloc.3",
+            "doc/man/man3/OPENSSL_strcasecmp.3",
             "doc/man/man3/OSSL_CMP_CTX_new.3",
             "doc/man/man3/OSSL_CMP_HDR_get0_transactionID.3",
             "doc/man/man3/OSSL_CMP_ITAV_set0.3",
@@ -19652,6 +19736,7 @@ our %unified_info = (
             "doc/man/man3/SSL_get0_peer_scts.3",
             "doc/man/man3/SSL_get_SSL_CTX.3",
             "doc/man/man3/SSL_get_all_async_fds.3",
+            "doc/man/man3/SSL_get_certificate.3",
             "doc/man/man3/SSL_get_ciphers.3",
             "doc/man/man3/SSL_get_client_random.3",
             "doc/man/man3/SSL_get_current_cipher.3",
@@ -19685,6 +19770,7 @@ our %unified_info = (
             "doc/man/man3/SSL_set_bio.3",
             "doc/man/man3/SSL_set_connect_state.3",
             "doc/man/man3/SSL_set_fd.3",
+            "doc/man/man3/SSL_set_retry_verify.3",
             "doc/man/man3/SSL_set_session.3",
             "doc/man/man3/SSL_set_shutdown.3",
             "doc/man/man3/SSL_set_verify_result.3",
@@ -20050,6 +20136,7 @@ our %unified_info = (
         "test/evp_fetch_prov_test",
         "test/evp_kdf_test",
         "test/evp_libctx_test",
+        "test/evp_pkey_ctx_new_from_name",
         "test/evp_pkey_dparams_test",
         "test/evp_pkey_provided_test",
         "test/evp_test",
@@ -20065,6 +20152,7 @@ our %unified_info = (
         "test/igetest",
         "test/keymgmt_internal_test",
         "test/lhash_test",
+        "test/localetest",
         "test/mdc2_internal_test",
         "test/mdc2test",
         "test/memleaktest",
@@ -20091,9 +20179,11 @@ our %unified_info = (
         "test/provfetchtest",
         "test/provider_fallback_test",
         "test/provider_internal_test",
+        "test/provider_pkey_test",
         "test/provider_status_test",
         "test/provider_test",
         "test/rand_status_test",
+        "test/rand_test",
         "test/rc2test",
         "test/rc4test",
         "test/rc5test",
@@ -24747,6 +24837,9 @@ our %unified_info = (
         "providers/implementations/digests/libdefault-lib-md5_sha1_prov.o" => [
             "providers/implementations/digests/md5_sha1_prov.c"
         ],
+        "providers/implementations/digests/libdefault-lib-null_prov.o" => [
+            "providers/implementations/digests/null_prov.c"
+        ],
         "providers/implementations/digests/libdefault-lib-sha2_prov.o" => [
             "providers/implementations/digests/sha2_prov.c"
         ],
@@ -25168,6 +25261,7 @@ our %unified_info = (
             "providers/implementations/digests/libdefault-lib-blake2s_prov.o",
             "providers/implementations/digests/libdefault-lib-md5_prov.o",
             "providers/implementations/digests/libdefault-lib-md5_sha1_prov.o",
+            "providers/implementations/digests/libdefault-lib-null_prov.o",
             "providers/implementations/digests/libdefault-lib-sha2_prov.o",
             "providers/implementations/digests/libdefault-lib-sha3_prov.o",
             "providers/implementations/digests/libdefault-lib-sm3_prov.o",
@@ -26571,6 +26665,12 @@ our %unified_info = (
         "test/evp_libctx_test-bin-evp_libctx_test.o" => [
             "test/evp_libctx_test.c"
         ],
+        "test/evp_pkey_ctx_new_from_name" => [
+            "test/evp_pkey_ctx_new_from_name-bin-evp_pkey_ctx_new_from_name.o"
+        ],
+        "test/evp_pkey_ctx_new_from_name-bin-evp_pkey_ctx_new_from_name.o" => [
+            "test/evp_pkey_ctx_new_from_name.c"
+        ],
         "test/evp_pkey_dparams_test" => [
             "test/evp_pkey_dparams_test-bin-evp_pkey_dparams_test.o"
         ],
@@ -26761,6 +26861,12 @@ our %unified_info = (
             "test/testutil/libtestutil-lib-tests.o",
             "test/testutil/libtestutil-lib-testutil_init.o"
         ],
+        "test/localetest" => [
+            "test/localetest-bin-localetest.o"
+        ],
+        "test/localetest-bin-localetest.o" => [
+            "test/localetest.c"
+        ],
         "test/mdc2_internal_test" => [
             "test/mdc2_internal_test-bin-mdc2_internal_test.o"
         ],
@@ -26929,6 +27035,16 @@ our %unified_info = (
         "test/provider_internal_test-bin-provider_internal_test.o" => [
             "test/provider_internal_test.c"
         ],
+        "test/provider_pkey_test" => [
+            "test/provider_pkey_test-bin-fake_rsaprov.o",
+            "test/provider_pkey_test-bin-provider_pkey_test.o"
+        ],
+        "test/provider_pkey_test-bin-fake_rsaprov.o" => [
+            "test/fake_rsaprov.c"
+        ],
+        "test/provider_pkey_test-bin-provider_pkey_test.o" => [
+            "test/provider_pkey_test.c"
+        ],
         "test/provider_status_test" => [
             "test/provider_status_test-bin-provider_status_test.o"
         ],
@@ -26950,6 +27066,12 @@ our %unified_info = (
         ],
         "test/rand_status_test-bin-rand_status_test.o" => [
             "test/rand_status_test.c"
+        ],
+        "test/rand_test" => [
+            "test/rand_test-bin-rand_test.o"
+        ],
+        "test/rand_test-bin-rand_test.o" => [
+            "test/rand_test.c"
         ],
         "test/rc2test" => [
             "test/rc2test-bin-rc2test.o"

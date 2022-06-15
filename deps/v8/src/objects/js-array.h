@@ -8,7 +8,6 @@
 #include "src/objects/allocation-site.h"
 #include "src/objects/fixed-array.h"
 #include "src/objects/js-objects.h"
-#include "torque-generated/field-offsets.h"
 
 // Has to be the last include (doesn't have include guards):
 #include "src/objects/object-macros.h"
@@ -58,8 +57,6 @@ class JSArray : public TorqueGeneratedJSArray<JSArray, JSObject> {
   static inline bool SetLengthWouldNormalize(Heap* heap, uint32_t new_length);
 
   // Initializes the array to a certain length.
-  inline bool AllowsSetLength();
-
   V8_EXPORT_PRIVATE static Maybe<bool> SetLength(Handle<JSArray> array,
                                                  uint32_t length);
 
@@ -143,10 +140,6 @@ class JSArray : public TorqueGeneratedJSArray<JSArray, JSObject> {
 
   TQ_OBJECT_CONSTRUCTORS(JSArray)
 };
-
-Handle<Object> CacheInitialJSArrayMaps(Isolate* isolate,
-                                       Handle<Context> native_context,
-                                       Handle<Map> initial_map);
 
 // The JSArrayIterator describes JavaScript Array Iterators Objects, as
 // defined in ES section #sec-array-iterator-objects.

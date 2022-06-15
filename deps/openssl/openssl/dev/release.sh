@@ -1,5 +1,5 @@
 #! /bin/bash -e
-# Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -8,6 +8,10 @@
 
 # This is the most shell agnostic way to specify that POSIX rules.
 POSIXLY_CORRECT=1
+
+# Force C locale because some commands (like date +%b) relies
+# on the current locale.
+export LC_ALL=C
 
 usage () {
     cat <<EOF
@@ -333,7 +337,7 @@ make update-fips-checksums >&42
 if [ -n "$(git status --porcelain)" ]; then
     $VERBOSE "== Committing updates"
     git add -u
-    git commit $git_quiet -m 'make update'
+    git commit $git_quiet -m $'make update\n\nRelease: yes'
     if [ -n "$reviewers" ]; then
         addrev --nopr $reviewers
     fi
@@ -371,7 +375,7 @@ done
 
 $VERBOSE "== Comitting updates and tagging"
 git add -u
-git commit $git_quiet -m "Prepare for release of $release_text"
+git commit $git_quiet -m "Prepare for release of $release_text"$'\n\nRelease: yes'
 if [ -n "$reviewers" ]; then
     addrev --nopr $reviewers
 fi
@@ -473,7 +477,7 @@ done
 
 $VERBOSE "== Committing updates"
 git add -u
-git commit $git_quiet -m "Prepare for $release_text"
+git commit $git_quiet -m "Prepare for $release_text"$'\n\nRelease: yes'
 if [ -n "$reviewers" ]; then
     addrev --nopr $reviewers
 fi
@@ -504,7 +508,7 @@ if $do_branch; then
 
     $VERBOSE "== Committing updates"
     git add -u
-    git commit $git_quiet -m "Prepare for $release_text"
+    git commit $git_quiet -m "Prepare for $release_text"$'\n\nRelease: yes'
     if [ -n "$reviewers" ]; then
         addrev --nopr $reviewers
     fi
@@ -808,7 +812,7 @@ release date in the tar file of any release.
 
 =head1 COPYRIGHT
 
-Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

@@ -5,9 +5,12 @@
 
 #include <cinttypes>
 #include <vector>
+#include "v8-fast-api-calls.h"
 #include "v8.h"
 
 namespace node {
+
+using CFunctionCallback = void (*)(v8::Local<v8::Value> receiver);
 
 // This class manages the external references from the V8 heap
 // to the C++ addresses in Node.js.
@@ -16,6 +19,8 @@ class ExternalReferenceRegistry {
   ExternalReferenceRegistry();
 
 #define ALLOWED_EXTERNAL_REFERENCE_TYPES(V)                                    \
+  V(CFunctionCallback)                                                         \
+  V(const v8::CFunctionInfo*)                                                  \
   V(v8::FunctionCallback)                                                      \
   V(v8::AccessorGetterCallback)                                                \
   V(v8::AccessorSetterCallback)                                                \
@@ -61,7 +66,9 @@ class ExternalReferenceRegistry {
   V(handle_wrap)                                                               \
   V(heap_utils)                                                                \
   V(messaging)                                                                 \
+  V(mksnapshot)                                                                \
   V(native_module)                                                             \
+  V(options)                                                                   \
   V(os)                                                                        \
   V(performance)                                                               \
   V(process_methods)                                                           \
@@ -83,6 +90,7 @@ class ExternalReferenceRegistry {
   V(uv)                                                                        \
   V(v8)                                                                        \
   V(zlib)                                                                      \
+  V(wasm_web_api)                                                              \
   V(worker)
 
 #if NODE_HAVE_I18N_SUPPORT

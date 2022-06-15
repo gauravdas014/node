@@ -6,12 +6,12 @@
 
 <!-- source_link=lib/util.js -->
 
-The `util` module supports the needs of Node.js internal APIs. Many of the
+The `node:util` module supports the needs of Node.js internal APIs. Many of the
 utilities are useful for application and module developers as well. To access
 it:
 
 ```js
-const util = require('util');
+const util = require('node:util');
 ```
 
 ## `util.callbackify(original)`
@@ -30,7 +30,7 @@ first argument will be the rejection reason (or `null` if the `Promise`
 resolved), and the second argument will be the resolved value.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 async function fn() {
   return 'hello world';
@@ -67,7 +67,7 @@ const callbackFunction = util.callbackify(fn);
 callbackFunction((err, ret) => {
   // When the Promise was rejected with `null` it is wrapped with an Error and
   // the original value is stored in `reason`.
-  err && err.hasOwnProperty('reason') && err.reason === null;  // true
+  err && Object.hasOwn(err, 'reason') && err.reason === null;  // true
 });
 ```
 
@@ -90,7 +90,7 @@ environment variable, then the returned function operates similar to
 [`console.error()`][]. If not, then the returned function is a no-op.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 const debuglog = util.debuglog('foo');
 
 debuglog('hello from foo [%d]', 123);
@@ -109,7 +109,7 @@ environment variable set, then it will not print anything.
 The `section` supports wildcard also:
 
 ```js
-const util = require('util');
+const util = require('node:util');
 const debuglog = util.debuglog('foo-bar');
 
 debuglog('hi there, it\'s foo-bar [%d]', 2333);
@@ -130,7 +130,7 @@ with a different function that doesn't have any initialization or
 unnecessary wrapping.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 let debuglog = util.debuglog('internals', (debug) => {
   // Replace with a logging function that optimizes out
   // testing if the section is enabled
@@ -153,7 +153,7 @@ then the returned value will be `true`. If not, then the returned value will be
 `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 const enabled = util.debuglog('foo').enabled;
 if (enabled) {
   console.log('hello from foo [%d]', 123);
@@ -197,7 +197,7 @@ The `util.deprecate()` method wraps `fn` (which may be a function or class) in
 such a way that it is marked as deprecated.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 exports.obsoleteFunction = util.deprecate(() => {
   // Do something here.
@@ -214,7 +214,7 @@ If the same optional `code` is supplied in multiple calls to `util.deprecate()`,
 the warning will be emitted only once for that `code`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 const fn1 = util.deprecate(someFunction, someMessage, 'DEP0001');
 const fn2 = util.deprecate(someOtherFunction, someOtherMessage, 'DEP0001');
@@ -260,7 +260,7 @@ changes:
                  was not a string.
   - version: v11.4.0
     pr-url: https://github.com/nodejs/node/pull/23708
-    description: The `%d`, `%f` and `%i` specifiers now support Symbols
+    description: The `%d`, `%f`, and `%i` specifiers now support Symbols
                  properly.
   - version: v11.4.0
     pr-url: https://github.com/nodejs/node/pull/24806
@@ -435,8 +435,8 @@ As an additional convenience, `superConstructor` will be accessible
 through the `constructor.super_` property.
 
 ```js
-const util = require('util');
-const EventEmitter = require('events');
+const util = require('node:util');
+const EventEmitter = require('node:events');
 
 function MyStream() {
   EventEmitter.call(this);
@@ -462,7 +462,7 @@ stream.write('It works!'); // Received data: "It works!"
 ES6 example using `class` and `extends`:
 
 ```js
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 
 class MyStream extends EventEmitter {
   write(data) {
@@ -485,6 +485,11 @@ stream.write('With ES6');
 <!-- YAML
 added: v0.3.0
 changes:
+  - version:
+    - v17.3.0
+    - v16.14.0
+    pr-url: https://github.com/nodejs/node/pull/41003
+    description: The `numericSeparator` option is supported now.
   - version:
     - v14.6.0
     - v12.19.0
@@ -531,7 +536,7 @@ changes:
     description: The `depth` default changed to `20`.
   - version: v11.0.0
     pr-url: https://github.com/nodejs/node/pull/22756
-    description: The inspection output is now limited to about 128 MB. Data
+    description: The inspection output is now limited to about 128 MiB. Data
                  above that size will not be fully inspected.
   - version: v10.12.0
     pr-url: https://github.com/nodejs/node/pull/22788
@@ -576,12 +581,12 @@ changes:
     codes. Colors are customizable. See [Customizing `util.inspect` colors][].
     **Default:** `false`.
   * `customInspect` {boolean} If `false`,
-    `[util.inspect.custom](depth, opts)` functions are not invoked.
+    `[util.inspect.custom](depth, opts, inspect)` functions are not invoked.
     **Default:** `true`.
   * `showProxy` {boolean} If `true`, `Proxy` inspection includes
     the [`target` and `handler`][] objects. **Default:** `false`.
   * `maxArrayLength` {integer} Specifies the maximum number of `Array`,
-    [`TypedArray`][], [`WeakMap`][] and [`WeakSet`][] elements to include when
+    [`TypedArray`][], [`WeakMap`][], and [`WeakSet`][] elements to include when
     formatting. Set to `null` or `Infinity` to show all elements. Set to `0` or
     negative to show no elements. **Default:** `100`.
   * `maxStringLength` {integer} Specifies the maximum number of characters to
@@ -605,6 +610,9 @@ changes:
     to `'get'`, only getters without a corresponding setter are inspected. If
     set to `'set'`, only getters with a corresponding setter are inspected.
     This might cause side effects depending on the getter function.
+    **Default:** `false`.
+  * `numericSeparator` {boolean} If set to `true`, an underscore is used to
+    separate every three digits in all bigints and numbers.
     **Default:** `false`.
 * Returns: {string} The representation of `object`.
 
@@ -634,7 +642,7 @@ util.inspect(baz);       // '[foo] {}'
 Circular references point to their anchor by using a reference index:
 
 ```js
-const { inspect } = require('util');
+const { inspect } = require('node:util');
 
 const obj = {};
 obj.a = [obj];
@@ -652,7 +660,7 @@ console.log(inspect(obj));
 The following example inspects all properties of the `util` object:
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 console.log(util.inspect(util, { showHidden: true, depth: null }));
 ```
@@ -660,7 +668,7 @@ console.log(util.inspect(util, { showHidden: true, depth: null }));
 The following example highlights the effect of the `compact` option:
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 const o = {
   a: [1, 2, [[
@@ -716,7 +724,7 @@ guarantee which entries are displayed. That means retrieving the same
 with no remaining strong references may be garbage collected at any time.
 
 ```js
-const { inspect } = require('util');
+const { inspect } = require('node:util');
 
 const obj = { a: 1 };
 const obj2 = { b: 2 };
@@ -730,8 +738,8 @@ The `sorted` option ensures that an object's property insertion order does not
 impact the result of `util.inspect()`.
 
 ```js
-const { inspect } = require('util');
-const assert = require('assert');
+const { inspect } = require('node:util');
+const assert = require('node:assert');
 
 const o1 = {
   b: [2, 3, 1],
@@ -754,8 +762,23 @@ assert.strict.equal(
 );
 ```
 
+The `numericSeparator` option adds an underscore every three digits to all
+numbers.
+
+```js
+const { inspect } = require('node:util');
+
+const thousand = 1_000;
+const million = 1_000_000;
+const bigNumber = 123_456_789n;
+const bigDecimal = 1_234.123_45;
+
+console.log(thousand, million, bigNumber, bigDecimal);
+// 1_000 1_000_000 123_456_789n 1_234.123_45
+```
+
 `util.inspect()` is a synchronous method intended for debugging. Its maximum
-output length is approximately 128 MB. Inputs that result in longer output will
+output length is approximately 128 MiB. Inputs that result in longer output will
 be truncated.
 
 ### Customizing `util.inspect` colors
@@ -853,20 +876,30 @@ ignored, if not supported.
 
 <!-- type=misc -->
 
+<!-- YAML
+added: v0.1.97
+changes:
+  - version:
+      - v17.3.0
+      - v16.14.0
+    pr-url: https://github.com/nodejs/node/pull/41019
+    description: The inspect argument is added for more interoperability.
+-->
+
 Objects may also define their own
-[`[util.inspect.custom](depth, opts)`][util.inspect.custom] function,
+[`[util.inspect.custom](depth, opts, inspect)`][util.inspect.custom] function,
 which `util.inspect()` will invoke and use the result of when inspecting
-the object:
+the object.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 class Box {
   constructor(value) {
     this.value = value;
   }
 
-  [util.inspect.custom](depth, options) {
+  [util.inspect.custom](depth, options, inspect) {
     if (depth < 0) {
       return options.stylize('[Box]', 'special');
     }
@@ -877,8 +910,8 @@ class Box {
 
     // Five space padding because that's the size of "Box< ".
     const padding = ' '.repeat(5);
-    const inner = util.inspect(this.value, newOptions)
-                      .replace(/\n/g, `\n${padding}`);
+    const inner = inspect(this.value, newOptions)
+                  .replace(/\n/g, `\n${padding}`);
     return `${options.stylize('Box', 'special')}< ${inner} >`;
   }
 }
@@ -889,12 +922,12 @@ util.inspect(box);
 // Returns: "Box< true >"
 ```
 
-Custom `[util.inspect.custom](depth, opts)` functions typically return a string
-but may return a value of any type that will be formatted accordingly by
-`util.inspect()`.
+Custom `[util.inspect.custom](depth, opts, inspect)` functions typically return
+a string but may return a value of any type that will be formatted accordingly
+by `util.inspect()`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 const obj = { foo: 'this will not show up in the inspect() output' };
 obj[util.inspect.custom] = (depth) => {
@@ -921,8 +954,13 @@ In addition to being accessible through `util.inspect.custom`, this
 symbol is [registered globally][global symbol registry] and can be
 accessed in any environment as `Symbol.for('nodejs.util.inspect.custom')`.
 
+Using this allows code to be written in a portable fashion, so that the custom
+inspect function is used in an Node.js environment and ignored in the browser.
+The `util.inspect()` function itself is passed as third argument to the custom
+inspect function to allow further portability.
+
 ```js
-const inspect = Symbol.for('nodejs.util.inspect.custom');
+const customInspectSymbol = Symbol.for('nodejs.util.inspect.custom');
 
 class Password {
   constructor(value) {
@@ -933,7 +971,7 @@ class Password {
     return 'xxxxxxxx';
   }
 
-  [inspect]() {
+  [customInspectSymbol](depth, inspectOptions, inspect) {
     return `Password <${this.toString()}>`;
   }
 }
@@ -958,7 +996,7 @@ object containing one or more valid [`util.inspect()`][] options. Setting
 option properties directly is also supported.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 const arr = Array(101).fill(0);
 
 console.log(arr); // Logs the truncated array
@@ -982,6 +1020,86 @@ Otherwise, returns `false`.
 See [`assert.deepStrictEqual()`][] for more information about deep strict
 equality.
 
+## `util.parseArgs([config])`
+
+<!-- YAML
+added: v18.3.0
+-->
+
+> Stability: 1 - Experimental
+
+* `config` {Object} Used to provide arguments for parsing and to configure
+  the parser. `config` supports the following properties:
+  * `args` {string\[]} array of argument strings. **Default:** `process.argv`
+    with `execPath` and `filename` removed.
+  * `options` {Object} Used to describe arguments known to the parser.
+    Keys of `options` are the long names of options and values are an
+    {Object} accepting the following properties:
+    * `type` {string} Type of argument, which must be either `boolean` or `string`.
+    * `multiple` {boolean} Whether this option can be provided multiple
+      times. If `true`, all values will be collected in an array. If
+      `false`, values for the option are last-wins. **Default:** `false`.
+    * `short` {string} A single character alias for the option.
+  * `strict`: {boolean} Should an error be thrown when unknown arguments
+    are encountered, or when arguments are passed that do not match the
+    `type` configured in `options`.
+    **Default:** `true`.
+  * `allowPositionals`: {boolean} Whether this command accepts positional
+    arguments.
+    **Default:** `false` if `strict` is `true`, otherwise `true`.
+
+* Returns: {Object} The parsed command line arguments:
+  * `values` {Object} A mapping of parsed option names with their {string}
+    or {boolean} values.
+  * `positionals` {string\[]} Positional arguments.
+
+Provides a higher level API for command-line argument parsing than interacting
+with `process.argv` directly. Takes a specification for the expected arguments
+and returns a structured object with the parsed options and positionals.
+
+```mjs
+import { parseArgs } from 'node:util';
+const args = ['-f', '--bar', 'b'];
+const options = {
+  foo: {
+    type: 'boolean',
+    short: 'f'
+  },
+  bar: {
+    type: 'string'
+  }
+};
+const {
+  values,
+  positionals
+} = parseArgs({ args, options });
+console.log(values, positionals);
+// Prints: [Object: null prototype] { foo: true, bar: 'b' } []
+```
+
+```cjs
+const { parseArgs } = require('node:util');
+const args = ['-f', '--bar', 'b'];
+const options = {
+  foo: {
+    type: 'boolean',
+    short: 'f'
+  },
+  bar: {
+    type: 'string'
+  }
+};
+const {
+  values,
+  positionals
+} = parseArgs({ args, options });
+console.log(values, positionals);
+// Prints: [Object: null prototype] { foo: true, bar: 'b' } []
+```
+
+`util.parseArgs` is experimental and behavior may change. Join the
+conversation in [pkgjs/parseargs][] to contribute to the design.
+
 ## `util.promisify(original)`
 
 <!-- YAML
@@ -996,8 +1114,8 @@ an `(err, value) => ...` callback as the last argument, and returns a version
 that returns promises.
 
 ```js
-const util = require('util');
-const fs = require('fs');
+const util = require('node:util');
+const fs = require('node:fs');
 
 const stat = util.promisify(fs.stat);
 stat('.').then((stats) => {
@@ -1010,8 +1128,8 @@ stat('.').then((stats) => {
 Or, equivalently using `async function`s:
 
 ```js
-const util = require('util');
-const fs = require('fs');
+const util = require('node:util');
+const fs = require('node:fs');
 
 const stat = util.promisify(fs.stat);
 
@@ -1034,7 +1152,7 @@ Using `promisify()` on class methods or other methods that use `this` may not
 work as expected unless handled specially:
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 class Foo {
   constructor() {
@@ -1064,7 +1182,7 @@ Using the `util.promisify.custom` symbol one can override the return value of
 [`util.promisify()`][]:
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 function doSomething(foo, callback) {
   // ...
@@ -1153,13 +1271,9 @@ added: v8.3.0
 An implementation of the [WHATWG Encoding Standard][] `TextDecoder` API.
 
 ```js
-const decoder = new TextDecoder('shift_jis');
-let string = '';
-let buffer;
-while (buffer = getNextChunkSomehow()) {
-  string += decoder.decode(buffer, { stream: true });
-}
-string += decoder.decode(); // end-of-stream
+const decoder = new TextDecoder();
+const u8arr = new Uint8Array([72, 101, 108, 108, 111]);
+console.log(decoder.decode(u8arr)); // Hello
 ```
 
 ### WHATWG supported encodings
@@ -1247,16 +1361,16 @@ changes:
   * `ignoreBOM` {boolean} When `true`, the `TextDecoder` will include the byte
     order mark in the decoded result. When `false`, the byte order mark will
     be removed from the output. This option is only used when `encoding` is
-    `'utf-8'`, `'utf-16be'` or `'utf-16le'`. **Default:** `false`.
+    `'utf-8'`, `'utf-16be'`, or `'utf-16le'`. **Default:** `false`.
 
-Creates an new `TextDecoder` instance. The `encoding` may specify one of the
+Creates a new `TextDecoder` instance. The `encoding` may specify one of the
 supported encodings or an alias.
 
 The `TextDecoder` class is also available on the global object.
 
 ### `textDecoder.decode([input[, options]])`
 
-* `input` {ArrayBuffer|DataView|TypedArray} An `ArrayBuffer`, `DataView` or
+* `input` {ArrayBuffer|DataView|TypedArray} An `ArrayBuffer`, `DataView`, or
   `TypedArray` instance containing the encoded data.
 * `options` {Object}
   * `stream` {boolean} `true` if additional chunks of data are expected.
@@ -1363,7 +1477,7 @@ added: v10.0.0
 changes:
   - version: v15.3.0
     pr-url: https://github.com/nodejs/node/pull/34055
-    description: Exposed as `require('util/types')`.
+    description: Exposed as `require('node:util/types')`.
 -->
 
 `util.types` provides type checks for different kinds of built-in objects.
@@ -1375,7 +1489,7 @@ The result generally does not make any guarantees about what kinds of
 properties or behavior a value exposes in JavaScript. They are primarily
 useful for addon developers who prefer to do type checking in JavaScript.
 
-The API is accessible via `require('util').types` or `require('util/types')`.
+The API is accessible via `require('node:util').types` or `require('node:util/types')`.
 
 ### `util.types.isAnyArrayBuffer(value)`
 
@@ -2176,7 +2290,7 @@ Alias for [`Array.isArray()`][].
 Returns `true` if the given `object` is an `Array`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isArray([]);
 // Returns: true
@@ -2201,7 +2315,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `Boolean`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isBoolean(1);
 // Returns: false
@@ -2226,7 +2340,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `Buffer`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isBuffer({ length: 0 });
 // Returns: false
@@ -2251,7 +2365,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `Date`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isDate(new Date());
 // Returns: true
@@ -2277,7 +2391,7 @@ Returns `true` if the given `object` is an [`Error`][]. Otherwise, returns
 `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isError(new Error());
 // Returns: true
@@ -2292,7 +2406,7 @@ possible to obtain an incorrect result when the `object` argument manipulates
 `@@toStringTag`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 const obj = { name: 'Error', message: 'an error occurred' };
 
 util.isError(obj);
@@ -2318,7 +2432,7 @@ Returns `true` if the given `object` is a `Function`. Otherwise, returns
 `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 function Foo() {}
 const Bar = () => {};
@@ -2347,7 +2461,7 @@ Returns `true` if the given `object` is strictly `null`. Otherwise, returns
 `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isNull(0);
 // Returns: false
@@ -2374,7 +2488,7 @@ Returns `true` if the given `object` is `null` or `undefined`. Otherwise,
 returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isNullOrUndefined(0);
 // Returns: false
@@ -2399,7 +2513,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `Number`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isNumber(false);
 // Returns: false
@@ -2429,7 +2543,7 @@ Returns `true` if the given `object` is strictly an `Object` **and** not a
 Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isObject(5);
 // Returns: false
@@ -2459,7 +2573,7 @@ Returns `true` if the given `object` is a primitive type. Otherwise, returns
 `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isPrimitive(5);
 // Returns: true
@@ -2496,7 +2610,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `RegExp`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isRegExp(/some regexp/);
 // Returns: true
@@ -2521,7 +2635,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `string`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isString('');
 // Returns: true
@@ -2548,7 +2662,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is a `Symbol`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.isSymbol(5);
 // Returns: false
@@ -2573,7 +2687,7 @@ deprecated: v4.0.0
 Returns `true` if the given `object` is `undefined`. Otherwise, returns `false`.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 const foo = undefined;
 util.isUndefined(5);
@@ -2599,7 +2713,7 @@ The `util.log()` method prints the given `string` to `stdout` with an included
 timestamp.
 
 ```js
-const util = require('util');
+const util = require('node:util');
 
 util.log('Timestamped message.');
 ```
@@ -2659,5 +2773,6 @@ util.log('Timestamped message.');
 [default sort]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
 [global symbol registry]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/for
 [list of deprecated APIS]: deprecations.md#list-of-deprecated-apis
+[pkgjs/parseargs]: https://github.com/pkgjs/parseargs
 [semantically incompatible]: https://github.com/nodejs/node/issues/4179
 [util.inspect.custom]: #utilinspectcustom

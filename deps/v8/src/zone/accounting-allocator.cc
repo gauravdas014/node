@@ -54,7 +54,8 @@ std::unique_ptr<v8::base::BoundedPageAllocator> CreateBoundedAllocator(
 
   auto allocator = std::make_unique<v8::base::BoundedPageAllocator>(
       platform_allocator, reservation_start, ZoneCompression::kReservationSize,
-      kZonePageSize);
+      kZonePageSize,
+      base::PageInitializationMode::kAllocatedPagesCanBeUninitialized);
 
   // Exclude first page from allocation to ensure that accesses through
   // decompressed null pointer will seg-fault.
@@ -112,7 +113,7 @@ void AccountingAllocator::ReturnSegment(Segment* segment,
   current_memory_usage_.fetch_sub(segment_size, std::memory_order_relaxed);
   segment->ZapHeader();
   if (COMPRESS_ZONES_BOOL && supports_compression) {
-    CHECK(FreePages(bounded_page_allocator_.get(), segment, segment_size));
+    FreePages(bounded_page_allocator_.get(), segment, segment_size);
   } else {
     zone_backing_free_(segment);
   }

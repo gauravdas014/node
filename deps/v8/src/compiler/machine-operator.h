@@ -119,6 +119,10 @@ V8_EXPORT_PRIVATE std::ostream& operator<<(std::ostream&,
 V8_EXPORT_PRIVATE LoadTransformParameters const& LoadTransformParametersOf(
     Operator const*) V8_WARN_UNUSED_RESULT;
 
+V8_EXPORT_PRIVATE bool operator==(LoadTransformParameters,
+                                  LoadTransformParameters);
+bool operator!=(LoadTransformParameters, LoadTransformParameters);
+
 struct LoadLaneParameters {
   MemoryAccessKind kind;
   LoadRepresentation rep;
@@ -404,7 +408,7 @@ class V8_EXPORT_PRIVATE MachineOperatorBuilder final
   MachineOperatorBuilder& operator=(const MachineOperatorBuilder&) = delete;
 
   const Operator* Comment(const char* msg);
-  const Operator* AbortCSAAssert();
+  const Operator* AbortCSADcheck();
   const Operator* DebugBreak();
   const Operator* UnsafePointerAdd();
 
@@ -901,7 +905,7 @@ class V8_EXPORT_PRIVATE MachineOperatorBuilder final
   const Operator* S128Select();
   const Operator* S128AndNot();
 
-  const Operator* I8x16Swizzle();
+  const Operator* I8x16Swizzle(bool relaxed = false);
   const Operator* I8x16Shuffle(const uint8_t shuffle[16]);
 
   const Operator* V128AnyTrue();
@@ -909,6 +913,20 @@ class V8_EXPORT_PRIVATE MachineOperatorBuilder final
   const Operator* I32x4AllTrue();
   const Operator* I16x8AllTrue();
   const Operator* I8x16AllTrue();
+
+  // Relaxed SIMD operators.
+  const Operator* I8x16RelaxedLaneSelect();
+  const Operator* I16x8RelaxedLaneSelect();
+  const Operator* I32x4RelaxedLaneSelect();
+  const Operator* I64x2RelaxedLaneSelect();
+  const Operator* F32x4RelaxedMin();
+  const Operator* F32x4RelaxedMax();
+  const Operator* F64x2RelaxedMin();
+  const Operator* F64x2RelaxedMax();
+  const Operator* I32x4RelaxedTruncF32x4S();
+  const Operator* I32x4RelaxedTruncF32x4U();
+  const Operator* I32x4RelaxedTruncF64x2SZero();
+  const Operator* I32x4RelaxedTruncF64x2UZero();
 
   // load [base + index]
   const Operator* Load(LoadRepresentation rep);

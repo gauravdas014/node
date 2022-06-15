@@ -73,6 +73,12 @@ int main(int argc, char* argv[]) {
   v8::V8::InitializeExternalStartupData(argv[0]);
   std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
   v8::V8::InitializePlatform(platform.get());
+#ifdef V8_SANDBOX
+  if (!v8::V8::InitializeSandbox()) {
+    fprintf(stderr, "Error initializing the V8 sandbox\n");
+    return 1;
+  }
+#endif
   v8::V8::Initialize();
   v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
   v8::Isolate::CreateParams create_params;
@@ -95,7 +101,7 @@ int main(int argc, char* argv[]) {
   }
   isolate->Dispose();
   v8::V8::Dispose();
-  v8::V8::ShutdownPlatform();
+  v8::V8::DisposePlatform();
   delete create_params.array_buffer_allocator;
   return result;
 }
@@ -381,8 +387,8 @@ void ReportException(v8::Isolate* isolate, v8::TryCatch* try_catch) {
         stack_trace_string->IsString() &&
         stack_trace_string.As<v8::String>()->Length() > 0) {
       v8::String::Utf8Value stack_trace(isolate, stack_trace_string);
-      const char* stack_trace_string = ToCString(stack_trace);
-      fprintf(stderr, "%s\n", stack_trace_string);
+      const char* err = ToCString(stack_trace);
+      fprintf(stderr, "%s\n", err);
     }
   }
 }
